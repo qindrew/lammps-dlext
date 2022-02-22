@@ -1,2 +1,3 @@
 # LAMMPS-dlext
-Wrapper for LAMMPS simulation data into DLPack data structures 
+
+Provide access to [LAMMPS](https://www.lammps.org) simulation data on CPU or GPU through [DLPack](https://github.com/dmlc/dlpack)
