@@ -2,8 +2,6 @@
 // This file is part of `hoomd-dlext`, see LICENSE.md
 
 #include "SystemView.h"
-#include "cxx11utils.h"
-
 
 using namespace dlext;
 using namespace cxx11utils;
@@ -25,24 +23,36 @@ unsigned int SystemView::global_particle_number() const { return pdata->getNGlob
 
 int SystemView::get_device_id(bool gpu_flag) const
 {
-    maybe_unused(gpu_flag); // prevent compiler warnings when ENABLE_CUDA is not defined
+    maybe_unused(gpu_flag);  // prevent compiler warnings when ENABLE_CUDA is not defined
 #ifdef ENABLE_CUDA
     if (gpu_flag)
-        return exec_conf->getGPUIds()[0];
+        return _exec_conf->getGPUIds()[0];
 #endif
-    return exec_conf->getRank();
+    return _exec_conf->getRank();
 }
 
 void SystemView::synchronize()
 {
 #ifdef ENABLE_CUDA
-    if (exec_conf->isCUDAEnabled()) {
-        auto gpu_ids = exec_conf->getGPUIds();
-        for (int i = exec_conf->getNumActiveGPUs() - 1; i >= 0; --i) {
+    if (_exec_conf->isCUDAEnabled()) {
+        auto gpu_ids = _exec_conf->getGPUIds();
+        for (int i = _exec_conf->getNumActiveGPUs() - 1; i >= 0; --i) {
             cudaSetDevice(gpu_ids[i]);
             cudaDeviceSynchronize();
         }
     }
 #endif
+}
+
+void SystemView::enter()
+{
+    if (_in_context_manager)
+        throw std::runtime_error("Context manager scope already active.");
+    _in_context_manager = true;
+}
+
+void SystemView::exit()
+{
+    _in_context_manager = false;
 }
 */
