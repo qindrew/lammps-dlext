@@ -26,6 +26,7 @@ using DLManagedTensorDeleter = void (*)(DLManagedTensorPtr);
 
 template <typename T>
 typedef Kokkos::DualView<T, Kokkos::LayoutRight, LMPDeviceType> tdual_array;
+using ArrayHandleUPtr = std::unique_ptr<ArrayHandle<T>>;
 
 // } // Aliases
 
