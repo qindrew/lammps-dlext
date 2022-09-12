@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
-// This file is part of `hoomd-dlext`, see LICENSE.md
+// This file is part of `lammps-dlext`, see LICENSE.md
 
 #ifndef LAMMPS_SYSVIEW_H_
 #define LAMMPS_SYSVIEW_H_
 
 #include "DLExt.h"
-//#include "hoomd/SystemDefinition.h"
+#include "lammps.h"
+#include "KOKKOS/kokkos_type.h"
 
 namespace dlext
 {

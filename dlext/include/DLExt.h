@@ -14,15 +14,18 @@
 namespace dlext
 {
 
-using namespace LAMMPS::NS;
+using namespace LAMMPS_NS;
 
 // { // Aliases
 
 using DLManagedTensorPtr = DLManagedTensor*;
 using DLManagedTensorDeleter = void (*)(DLManagedTensorPtr);
 
+//template <typename T>
+//using ArrayHandleUPtr = std::unique_ptr<ArrayHandle<T>>;
+
 template <typename T>
-using ArrayHandleUPtr = std::unique_ptr<ArrayHandle<T>>;
+typedef Kokkos::DualView<T, Kokkos::LayoutRight, LMPDeviceType> tdual_array;
 
 // } // Aliases
 
