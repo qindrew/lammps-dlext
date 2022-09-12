@@ -8,6 +8,8 @@
 #include "lammps.h"
 #include "KOKKOS/kokkos_type.h"
 
+using namespace LAMMPS_NS;
+
 namespace dlext
 {
 
