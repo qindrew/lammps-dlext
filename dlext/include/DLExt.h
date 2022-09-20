@@ -8,6 +8,8 @@
 #include "dlpack/dlpack.h"
 #include "lammps.h"
 
+#include "kokkos_type.h"
+
 #include <type_traits>
 #include <vector>
 
@@ -15,24 +17,24 @@ namespace dlext
 {
 
 using namespace LAMMPS_NS;
+using namespace Kokkos;
 
 // { // Aliases
 
 using DLManagedTensorPtr = DLManagedTensor*;
 using DLManagedTensorDeleter = void (*)(DLManagedTensorPtr);
 
-//template <typename T>
-//using ArrayHandleUPtr = std::unique_ptr<ArrayHandle<T>>;
+template <typename T>
+using tdual_array = Kokkos::DualView<T, Kokkos::LayoutRight, Kokkos::CudaSpace>;
 
 template <typename T>
-typedef Kokkos::DualView<T, Kokkos::LayoutRight, LMPDeviceType> tdual_array;
-using ArrayHandleUPtr = std::unique_ptr<ArrayHandle<T>>;
+using ArrayHandleUPtr = std::unique_ptr<tdual_array<T>>;
 
 // } // Aliases
 
 // { // Constants
 
-constexpr uint8_t kBits = std::is_same<Scalar, float>::value ? 32 : 64;
+constexpr uint8_t kBits = 64; // std::is_same<Scalar, float>::value ? 32 : 64;
 
 constexpr DLManagedTensor kInvalidDLManagedTensor {
     DLTensor {
@@ -58,7 +60,7 @@ struct DLDataBridge {
     DLManagedTensor tensor;
 
     DLDataBridge(ArrayHandleUPtr<T>& handle)
-        : handle { std::move(handle) }
+        //: handle { std::move(handle) }
     { }
 };
 
@@ -73,6 +75,11 @@ void delete_bridge(DLManagedTensorPtr tensor)
 }
 
 void do_not_delete(DLManagedTensorPtr tensor) { }
+
+typedef double Scalar;
+struct Scalar3 { Scalar x, y, z; };
+struct Scalar4 { Scalar x, y, z, w; };
+
 
 template <typename T>
 inline void* opaque(T* data) { return static_cast<void*>(data); }

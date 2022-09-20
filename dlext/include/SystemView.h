@@ -6,6 +6,7 @@
 
 #include "DLExt.h"
 #include "lammps.h"
+#include "fix.h"
 #include "KOKKOS/kokkos_type.h"
 
 using namespace LAMMPS_NS;
@@ -18,7 +19,7 @@ namespace cxx11 = cxx11utils;
 class SystemView;
 
 // { // Aliases
-
+/*
 using AccessLocation = access_location::Enum;
 const auto kOnHost = access_location::host;
 #ifdef ENABLE_CUDA
@@ -29,25 +30,25 @@ using AccessMode = access_mode::Enum;
 const auto kRead = access_mode::read;
 const auto kReadWrite = access_mode::readwrite;
 const auto kOverwrite = access_mode::overwrite;
-
+*/
 //using ParticleDataSPtr = std::shared_ptr<ParticleData>;
 //using SystemDefinitionSPtr = std::shared_ptr<SystemDefinition>;
 //using ExecutionConfigurationSPtr = std::shared_ptr<const ExecutionConfiguration>;
-
+/*
 template <template <typename> class Array, typename T, typename Object>
 using ArrayPropertyGetter = const Array<T>& (Object::*)() const;
 
 template <typename T>
 using PropertyGetter = T (*)(const SystemView&, AccessLocation, AccessMode);
-
+*/
 // } // Aliases
 
-class DEFAULT_VISIBILITY SystemView {
+class DEFAULT_VISIBILITY SystemView : public Fix {
 public:
-    SystemView(LAMMPS_NS::LAMMPS* lmp);
+    SystemView(LAMMPS_NS::LAMMPS* lmp, int, char**);
 /*
     ParticleDataSPtr particle_data() const;
-    //ExecutionConfigurationSPtr exec_config() const;
+    ExecutionConfigurationSPtr exec_config() const;
     bool is_gpu_enabled() const;
     bool in_context_manager() const;
     unsigned int local_particle_number() const;
@@ -57,7 +58,7 @@ public:
     void enter();
     void exit();
 */
-private:
+protected:
 /*
     SystemDefinitionSPtr _sysdef;
     ParticleDataSPtr _pdata;
@@ -68,28 +69,35 @@ private:
 
 inline DLDevice dldevice(const SystemView& sysview, bool gpu_flag)
 {
-    return DLDevice { gpu_flag ? kDLCUDA : kDLCPU, sysview.get_device_id(gpu_flag) };
+    return DLDevice { gpu_flag ? kDLCUDA : kDLCPU, 
+                      0 //sysview.get_device_id(gpu_flag)
+                       };
 }
 
 template <template <typename> class>
 unsigned int particle_number(const SystemView& sysview);
+
 template <>
 inline unsigned int particle_number<GlobalArray>(const SystemView& sysview)
 {
-    return sysview.local_particle_number();
+    return 0; //sysview.local_particle_number();
 }
 template <>
 inline unsigned int particle_number<GlobalVector>(const SystemView& sysview)
 {
-    return sysview.global_particle_number();
+    return 0; //sysview.global_particle_number();
 }
 
+// see atom_kokkos.h for executation space and datamask
+/*
+*/
 template <template <typename> class A, typename T, typename O>
-DLManagedTensorPtr wrap(
-    const SystemView& sysview, ArrayPropertyGetter<A, T, O> getter,
-    AccessLocation requested_location, AccessMode mode,
-    int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0
-)
+DLManagedTensorPtr wrap(const SystemView& sysview,
+/*
+                        ArrayPropertyGetter<A, T, O> getter,
+*/                        
+                        const ExecutionSpace location, unsigned int mode,
+                        int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0)
 {
     assert((size2 >= 1));
 
@@ -114,7 +122,8 @@ DLManagedTensorPtr wrap(
     dltensor.dtype = dtype<T>();
 
     auto& shape = bridge->shape;
-    shape.push_back(particle_number<A>(sysview));
+    int n
+    //shape.push_back(particle_number<A>(sysview));
     if (size2 > 1)
         shape.push_back(size2);
 
@@ -133,7 +142,7 @@ DLManagedTensorPtr wrap(
 
 struct PositionsTypes final {
     static DLManagedTensorPtr from(
-        const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
+        const SystemView& sysview, const ExecutionSpace location, const unsigned int mode,
     )
     {
         return wrap(sysview, &ParticleData::getPositions, location, mode, 4);

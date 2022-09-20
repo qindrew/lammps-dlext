@@ -20,22 +20,22 @@ class DEFAULT_VISIBILITY Sampler : public Fix {
 public:
     //! Constructor
     Sampler(
-        //LAMMPS_NS::LAMMPS* lmp, int narg, char** arg, 
-        SystemView sysview,
+        LAMMPS* lmp, int narg, char** arg,
+        //SystemView sysview,
         ExternalUpdater update_callback,
         AccessLocation location,
         AccessMode mode
     );
     void setSystemDefinition(SystemDefinitionSPtr sysdef) override
     {
-        _sysview = SystemView(sysdef);
+        //_sysview = SystemView(sysdef);
     }
     void update(TimeStep timestep) override
     {
         forward_data(_update_callback, _location, _mode, timestep);
     }
 
-    const SystemView& system_view() const;
+    //const SystemView& system_view() const;
 
     //! Wraps the system positions, velocities, reverse tags, images and forces as
     //! DLPack tensors and passes them to the external function `callback`.
@@ -59,28 +59,28 @@ public:
     }
 
 private:
-    SystemView _sysview;
+    //SystemView _sysview;
     ExternalUpdater _update_callback;
     AccessLocation _location;
     AccessMode _mode;
 };
 
 template <typename ExternalUpdater, template <typename> class Wrapper>
-Sampler<ExternalUpdater, Wrapper>::Sampler(
-    SystemView sysview, ExternalUpdater update, AccessLocation location, AccessMode mode
-)
-    : _sysview { sysview }
+Sampler<ExternalUpdater, Wrapper>::Sampler(//SystemView sysview,
+    ExternalUpdater update, AccessLocation location, AccessMode mode)
+    : Fix(lmp, narg, arg)
+    //, _sysview { sysview }
     , _update_callback { update }
     , _location { location }
     , _mode { mode }
 { }
-
+/*
 template <typename ExternalUpdater, template <typename> class Wrapper>
 const SystemView& Sampler<ExternalUpdater, Wrapper>::system_view() const
 {
     return _sysview;
 }
-
+*/
 
 /*
 Sampler<DeviceType>::Sampler(LAMMPS_NS::LAMMPS* lmp, int narg, char** arg, py::function python_update)
