@@ -101,6 +101,7 @@ private:
     AccessLocation _location;
     AccessMode _mode;
 
+    // the ArrayTypes namespace and its structs (t_x_array, t_v_array and so on) are defined in kokkos_type.h
     typename ArrayTypes<DeviceType>::t_x_array x;
     typename ArrayTypes<DeviceType>::t_v_array v;
     typename ArrayTypes<DeviceType>::t_f_array f;
