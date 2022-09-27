@@ -13,9 +13,15 @@ using namespace LAMMPS::NS;
 namespace dlext
 {
 
-using TimeStep = unsigned int;
+using TimeStep = int;
 
-template <typename ExternalUpdater, template <typename> class Wrapper>
+/*
+  Sampler is essentially a LAMMPS fix that allows an external updater
+  to advance atom positions based on the instantaneous values of the CVs
+  
+  
+*/
+template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
 class DEFAULT_VISIBILITY Sampler : public Fix {
 public:
     //! Constructor
@@ -26,11 +32,12 @@ public:
         AccessLocation location,
         AccessMode mode
     );
+
     void setSystemDefinition(SystemDefinitionSPtr sysdef) override
     {
         //_sysview = SystemView(sysdef);
     }
-    void update(TimeStep timestep) override
+    void post_force(TimeStep timestep) override
     {
         forward_data(_update_callback, _location, _mode, timestep);
     }
@@ -73,7 +80,16 @@ Sampler<ExternalUpdater, Wrapper>::Sampler(//SystemView sysview,
     , _update_callback { update }
     , _location { location }
     , _mode { mode }
-{ }
+{ 
+    this->setSimulator(lmp);
+
+    kokkosable = 1;
+    atomKK = (AtomKokkos *) atom;
+
+    execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
+    datamask_read =  X_MASK | V_MASK | F_MASK | MASK_MASK | RMASS_MASK | TYPE_MASK;
+    datamask_modify = X_MASK | F_MASK;
+}
 /*
 template <typename ExternalUpdater, template <typename> class Wrapper>
 const SystemView& Sampler<ExternalUpdater, Wrapper>::system_view() const
@@ -82,26 +98,7 @@ const SystemView& Sampler<ExternalUpdater, Wrapper>::system_view() const
 }
 */
 
-/*
-Sampler<DeviceType>::Sampler(LAMMPS_NS::LAMMPS* lmp, int narg, char** arg, py::function python_update)
-  : Fix(lmp, narg, arg), m_python_update(python_update)
-{
-  this->setSimulator(lmp);
 
-  kokkosable = 1;
-  atomKK = (AtomKokkos *) atom;
-
-  execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
-  datamask_read =  V_MASK | F_MASK | MASK_MASK | RMASS_MASK | TYPE_MASK;
-  datamask_modify = F_MASK;
-}
-
-template<class DeviceType>
-void Sampler<DeviceType>::setSimulator(LAMMPS_NS::LAMMPS* lmp)
-{
-  m_lmp = lmp;
-}
-*/
 
 
 }  // namespace dlext

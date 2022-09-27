@@ -93,9 +93,7 @@ inline unsigned int particle_number<GlobalVector>(const SystemView& sysview)
 */
 template <template <typename> class A, typename T, typename O>
 DLManagedTensorPtr wrap(const SystemView& sysview,
-/*
-                        ArrayPropertyGetter<A, T, O> getter,
-*/                        
+//                      ArrayPropertyGetter<A, T, O> getter,
                         const ExecutionSpace location, unsigned int mode,
                         int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0)
 {
