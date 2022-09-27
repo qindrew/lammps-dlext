@@ -155,7 +155,7 @@ struct VelocitiesMasses final {
         return wrap(sysview, &ParticleData::getVelocities, location, mode, 4);
     }
 };
-
+/*
 struct Orientations final {
     static DLManagedTensorPtr from(
         const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
@@ -164,7 +164,7 @@ struct Orientations final {
         return wrap(sysview, &ParticleData::getOrientationArray, location, mode, 4);
     }
 };
-
+*/
 struct AngularMomenta final {
     static DLManagedTensorPtr from(
         const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
@@ -173,7 +173,7 @@ struct AngularMomenta final {
         return wrap(sysview, &ParticleData::getAngularMomentumArray, location, mode, 4);
     }
 };
-
+/*
 struct MomentsOfInertia final {
     static DLManagedTensorPtr from(
         const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
@@ -182,7 +182,7 @@ struct MomentsOfInertia final {
         return wrap(sysview, &ParticleData::getMomentsOfInertiaArray, location, mode, 3);
     }
 };
-
+*/
 struct Charges final {
     static DLManagedTensorPtr from(
         const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite

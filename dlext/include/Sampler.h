@@ -46,7 +46,7 @@ public:
         forward_data(_update_callback, _location, _mode, timestep);
     }
 
-    //! returns the underlying LAMMPS pointer
+    //! simply returns this
     void* system_view() const;
 
     //! Wraps the system positions, velocities, reverse tags, images and forces as
@@ -62,11 +62,35 @@ public:
     template <typename Callback>
     void forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
     {
+        atomKK->sync(execution_space,datamask_read);
+
+        x = atomKK->k_x.view<DeviceType>();
+        v = atomKK->k_v.view<DeviceType>();
+        f = atomKK->k_f.view<DeviceType>();
+        type = atomKK->k_type.view<DeviceType>();
+        tag = atomKK->k_tag.view<DeviceType>();
+
+        if (atomKK->omega_flag)
+            omega  = atomKK->k_omega.view<DeviceType>();
+
+        if (atomKK->angmom_flag)
+            angmom = atomKK->k_angmom.view<DeviceType>();
+
+        if (atomKK->torque_flag)
+            torque = atomKK->k_torque.view<DeviceType>();
+
+        /*
+            TODO: wrap these KOKKOS arrays into DLManagedTensor to pass to callback
+            Wrapper and the structs (PositionTypes, VelocitiesMasses, etc.) are currently residing in SystemView.h
+        */
+        
         auto pos_capsule = Wrapper<PositionsTypes>::wrap(lmp, location, mode);
         auto vel_capsule = Wrapper<VelocitiesMasses>::wrap(lmp, location, mode);
         auto rtags_capsule = Wrapper<RTags>::wrap(lmp, location, mode);
         auto img_capsule = Wrapper<Images>::wrap(lmp, location, mode);
         auto force_capsule = Wrapper<NetForces>::wrap(lmp, location, kReadWrite);
+
+        // callback will be responsible for advancing the simulation for n steps
 
         callback(pos_capsule, vel_capsule, rtags_capsule, img_capsule, force_capsule, n);
     }
@@ -76,6 +100,17 @@ private:
     ExternalUpdater _update_callback;
     AccessLocation _location;
     AccessMode _mode;
+
+    typename ArrayTypes<DeviceType>::t_x_array x;
+    typename ArrayTypes<DeviceType>::t_v_array v;
+    typename ArrayTypes<DeviceType>::t_f_array f;
+    typename ArrayTypes<DeviceType>::t_v_array omega;
+    typename ArrayTypes<DeviceType>::t_v_array angmom;
+    typename ArrayTypes<DeviceType>::t_f_array torque;
+    typename ArrayTypes<DeviceType>::t_float_1d mass;
+    typename ArrayTypes<DeviceType>::t_int_1d_randomread type;
+    typename ArrayTypes<DeviceType>::t_int_1d mask;
+    typename ArrayTypes<DeviceType>::t_tagint_1d tag;
 };
 
 template <typename ExternalUpdater, template <typename> class Wrapper>
@@ -94,8 +129,9 @@ Sampler<ExternalUpdater, Wrapper>::Sampler(
     atomKK = (AtomKokkos *) atom;
 
     execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
-    datamask_read =  X_MASK | V_MASK | F_MASK | MASK_MASK | RMASS_MASK | TYPE_MASK;
-    datamask_modify = X_MASK | F_MASK;
+    
+    datamask_read   = X_MASK | V_MASK | F_MASK | TYPE_MASK | OMEGA_MASK | MASK_MASK | TORQUE_MASK | ANGMOM_MASK;
+    datamask_modify = X_MASK | V_MASK | F_MASK | OMEGA_MASK | TORQUE_MASK | ANGMOM_MASK;
 }
 
 template <typename ExternalUpdater, template <typename> class Wrapper>
