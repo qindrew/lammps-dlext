@@ -6,9 +6,10 @@
 
 #include "SystemView.h"
 #include "KOKKOS/kokkos_type.h"
+#include "atom_masks.h"
 #include "fix.h"
 
-using namespace LAMMPS::NS;
+using namespace LAMMPS_NS;
 
 namespace dlext
 {
@@ -26,8 +27,7 @@ template <typename ExternalUpdater, template <typename> class Wrapper, class Dev
 class DEFAULT_VISIBILITY Sampler : public Fix {
 public:
     //! Constructor
-    Sampler(
-        LAMMPS* lmp, int narg, char** arg,
+    Sampler(LAMMPS* lmp, int narg, char** arg,
         ExternalUpdater update_callback,
         AccessLocation location,
         AccessMode mode
@@ -60,40 +60,7 @@ public:
     //! and access `mode`. NOTE: Forces are always passed in readwrite mode.
     //! TODO: Move Wrapper from SystemView.h to here
     template <typename Callback>
-    void forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
-    {
-        atomKK->sync(execution_space,datamask_read);
-
-        x = atomKK->k_x.view<DeviceType>();
-        v = atomKK->k_v.view<DeviceType>();
-        f = atomKK->k_f.view<DeviceType>();
-        type = atomKK->k_type.view<DeviceType>();
-        tag = atomKK->k_tag.view<DeviceType>();
-
-        if (atomKK->omega_flag)
-            omega  = atomKK->k_omega.view<DeviceType>();
-
-        if (atomKK->angmom_flag)
-            angmom = atomKK->k_angmom.view<DeviceType>();
-
-        if (atomKK->torque_flag)
-            torque = atomKK->k_torque.view<DeviceType>();
-
-        /*
-            TODO: wrap these KOKKOS arrays into DLManagedTensor to pass to callback
-            Wrapper and the structs (PositionTypes, VelocitiesMasses, etc.) are currently residing in SystemView.h
-        */
-        
-        auto pos_capsule = Wrapper<PositionsTypes>::wrap(lmp, location, mode);
-        auto vel_capsule = Wrapper<VelocitiesMasses>::wrap(lmp, location, mode);
-        auto rtags_capsule = Wrapper<RTags>::wrap(lmp, location, mode);
-        auto img_capsule = Wrapper<Images>::wrap(lmp, location, mode);
-        auto force_capsule = Wrapper<NetForces>::wrap(lmp, location, kReadWrite);
-
-        // callback will be responsible for advancing the simulation for n steps
-
-        callback(pos_capsule, vel_capsule, rtags_capsule, img_capsule, force_capsule, n);
-    }
+    void forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n);
 
 private:
     //SystemView _sysview;
@@ -114,9 +81,11 @@ private:
     typename ArrayTypes<DeviceType>::t_tagint_1d tag;
 };
 
-template <typename ExternalUpdater, template <typename> class Wrapper>
-Sampler<ExternalUpdater, Wrapper>::Sampler(
+       
+template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
+Sampler<ExternalUpdater, Wrapper, DeviceType>::Sampler(
     //SystemView sysview,
+    LAMMPS* lmp, int narg, char** arg,
     ExternalUpdater update, AccessLocation location, AccessMode mode)
     : Fix(lmp, narg, arg)
     //, _sysview { sysview }
@@ -135,12 +104,48 @@ Sampler<ExternalUpdater, Wrapper>::Sampler(
     datamask_modify = X_MASK | V_MASK | F_MASK | OMEGA_MASK | TORQUE_MASK | ANGMOM_MASK;
 }
 
-template <typename ExternalUpdater, template <typename> class Wrapper>
-void* Sampler<ExternalUpdater, Wrapper>::system_view() const
+template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
+void* Sampler<ExternalUpdater, Wrapper, DeviceType>::system_view() const
 {
     return this->lmp;
 }
 
+template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
+template <typename Callback>
+void Sampler<ExternalUpdater, Wrapper, DeviceType>::forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
+{
+    atomKK->sync(execution_space,datamask_read);
+
+    x = atomKK->k_x.template view<DeviceType>();
+    v = atomKK->k_v.template view<DeviceType>();
+    f = atomKK->k_f.template view<DeviceType>();
+    type = atomKK->k_type.template view<DeviceType>();
+    tag = atomKK->k_tag.template view<DeviceType>();
+
+    if (atomKK->omega_flag)
+        omega  = atomKK->k_omega.template view<DeviceType>();
+
+    if (atomKK->angmom_flag)
+        angmom = atomKK->k_angmom.template view<DeviceType>();
+
+    if (atomKK->torque_flag)
+        torque = atomKK->k_torque.template view<DeviceType>();
+
+    /*
+        TODO: wrap these KOKKOS arrays into DLManagedTensor to pass to callback
+        Wrapper and the structs (PositionTypes, VelocitiesMasses, etc.) are currently residing in SystemView.h
+    */
+    
+    auto pos_capsule = Wrapper<PositionsTypes>::wrap(lmp, location, mode);
+    auto vel_capsule = Wrapper<VelocitiesMasses>::wrap(lmp, location, mode);
+    auto rtags_capsule = Wrapper<RTags>::wrap(lmp, location, mode);
+    auto img_capsule = Wrapper<Images>::wrap(lmp, location, mode);
+    auto force_capsule = Wrapper<NetForces>::wrap(lmp, location, kReadWrite);
+
+    // callback will be responsible for advancing the simulation for n steps
+
+    callback(pos_capsule, vel_capsule, rtags_capsule, img_capsule, force_capsule, n);
+}
 
 
 

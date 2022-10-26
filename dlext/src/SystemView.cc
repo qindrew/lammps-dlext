@@ -7,7 +7,7 @@ using namespace dlext;
 using namespace cxx11utils;
 using namespace LAMMPS_NS;
 
-SystemView::SystemView(LAMMPS* lmp)
+SystemView::SystemView(LAMMPS* lmp, int argc, char** argv) : Fix(lmp, argc, argv)
 //    : sysdef { sysdef }
     //, pdata { sysdef->getParticleData() }
 {

@@ -18,19 +18,38 @@ namespace cxx11 = cxx11utils;
 
 class SystemView;
 
-// { // Aliases
-/*
+//{ // Aliases
+
+//! Specifies where to acquire the data
+struct access_location {
+    //! The enum
+    enum Enum {
+        host,   //!< Ask to acquire the data on the host
+#ifdef ENABLE_CUDA
+        device  //!< Ask to acquire the data on the device
+#endif
+    };
+};
 using AccessLocation = access_location::Enum;
 const auto kOnHost = access_location::host;
 #ifdef ENABLE_CUDA
 const auto kOnDevice = access_location::device;
 #endif
 
+//! Specify how the data is to be accessed
+struct access_mode  {
+    //! The enum
+    enum Enum {
+        read,       //!< Data will be accessed read only
+        readwrite,  //!< Data will be accessed for read and write
+        overwrite   //!< The data is to be completely overwritten during this acquire
+    };
+};
 using AccessMode = access_mode::Enum;
 const auto kRead = access_mode::read;
 const auto kReadWrite = access_mode::readwrite;
 const auto kOverwrite = access_mode::overwrite;
-*/
+
 //using ParticleDataSPtr = std::shared_ptr<ParticleData>;
 //using SystemDefinitionSPtr = std::shared_ptr<SystemDefinition>;
 //using ExecutionConfigurationSPtr = std::shared_ptr<const ExecutionConfiguration>;
@@ -41,7 +60,8 @@ using ArrayPropertyGetter = const Array<T>& (Object::*)() const;
 template <typename T>
 using PropertyGetter = T (*)(const SystemView&, AccessLocation, AccessMode);
 */
-// } // Aliases
+
+//} // Aliases
 
 class DEFAULT_VISIBILITY SystemView : public Fix {
 public:
@@ -74,31 +94,22 @@ inline DLDevice dldevice(const SystemView& sysview, bool gpu_flag)
                        };
 }
 
-template <template <typename> class>
-unsigned int particle_number(const SystemView& sysview);
-
-template <>
-inline unsigned int particle_number<GlobalArray>(const SystemView& sysview)
+inline unsigned int particle_number(const SystemView& sysview)
 {
     return 0; //sysview.local_particle_number();
 }
-template <>
-inline unsigned int particle_number<GlobalVector>(const SystemView& sysview)
-{
-    return 0; //sysview.global_particle_number();
-}
+
 
 // see atom_kokkos.h for executation space and datamask
 /*
 */
 template <template <typename> class A, typename T, typename O>
 DLManagedTensorPtr wrap(const SystemView& sysview,
-//                      ArrayPropertyGetter<A, T, O> getter,
-                        const ExecutionSpace location, unsigned int mode,
+                        const AccessLocation location, const AccessMode mode,
                         int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0)
 {
     assert((size2 >= 1));
-
+/*
     auto location = sysview.is_gpu_enabled() ? requested_location : kOnHost;
     auto handle = cxx11utils::make_unique<ArrayHandle<T>>(
         INVOKE(*(sysview.particle_data()), getter)(), location, mode
@@ -134,27 +145,29 @@ DLManagedTensorPtr wrap(const SystemView& sysview,
     dltensor.shape = reinterpret_cast<std::int64_t*>(shape.data());
     dltensor.strides = reinterpret_cast<std::int64_t*>(strides.data());
     dltensor.byte_offset = offset;
-
-    return &(bridge.release()->tensor);
+*/
+    return nullptr; //&(bridge.release()->tensor);
 }
-
+/*
 struct PositionsTypes final {
     static DLManagedTensorPtr from(
-        const SystemView& sysview, const ExecutionSpace location, const unsigned int mode,
+        const SystemView& sysview, const AccessLocation location, AccessMode mode
     )
     {
-        return wrap(sysview, &ParticleData::getPositions, location, mode, 4);
+        return wrap(sysview, location, mode, 4);
     }
 };
-
+*/
+/*
 struct VelocitiesMasses final {
     static DLManagedTensorPtr from(
         const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
     )
     {
-        return wrap(sysview, &ParticleData::getVelocities, location, mode, 4);
+        return wrap(sysview, location, mode, 4);
     }
 };
+*/
 /*
 struct Orientations final {
     static DLManagedTensorPtr from(
@@ -165,6 +178,7 @@ struct Orientations final {
     }
 };
 */
+/*
 struct AngularMomenta final {
     static DLManagedTensorPtr from(
         const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
@@ -173,6 +187,7 @@ struct AngularMomenta final {
         return wrap(sysview, &ParticleData::getAngularMomentumArray, location, mode, 4);
     }
 };
+*/
 /*
 struct MomentsOfInertia final {
     static DLManagedTensorPtr from(
@@ -183,6 +198,7 @@ struct MomentsOfInertia final {
     }
 };
 */
+/*
 struct Charges final {
     static DLManagedTensorPtr from(
         const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
@@ -254,7 +270,7 @@ struct NetVirial final {
         return wrap(sysview, &ParticleData::getNetVirial, location, mode, 6);
     }
 };
-
+*/
 }  // namespace dlext
 
 #endif  // LAMMPS_SYSVIEW_H_

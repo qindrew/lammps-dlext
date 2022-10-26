@@ -52,11 +52,14 @@ struct DEFAULT_VISIBILITY PyUnsafeEncapsulator final {
 template <typename Property>
 struct DEFAULT_VISIBILITY PyEncapsulator final {
     static PyCapsule wrap(
-        SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
+        //SystemView& sysview, 
+        AccessLocation location, AccessMode mode = kReadWrite
     )
     {
+        /*
         if (!sysview.in_context_manager())
             throw std::runtime_error("Cannot access property outside a context manager.");
+        */             
         auto tensor = Property::from(sysview, location, mode);
         auto capsule = enpycapsulate(tensor, /* autodestruct = */ false);
         kPyCapsulesPool.push_back(std::make_tuple(capsule.ptr(), tensor, tensor->deleter));
