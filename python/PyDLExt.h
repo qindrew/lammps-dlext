@@ -4,7 +4,7 @@
 #ifndef PY_LAMMPS_DLPACK_EXTENSION_H_
 #define PY_LAMMPS_DLPACK_EXTENSION_H_
 
-#include "SystemView.h"
+#include "Sampler.h"
 #include "pybind11/pybind11.h"
 
 namespace dlext
@@ -38,21 +38,21 @@ inline PyCapsule enpycapsulate(DLManagedTensorPtr tensor, bool autodestruct = tr
     return capsule;
 }
 
-template <typename Property>
+template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType, typename Property>
 struct DEFAULT_VISIBILITY PyUnsafeEncapsulator final {
-    static PyCapsule wrap(
-        const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
+    static PyCapsule wrap(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler,
+     AccessLocation location, AccessMode mode = kReadWrite
     )
     {
-        DLManagedTensorPtr tensor = Property::from(sysview, location, mode);
+        DLManagedTensorPtr tensor = Property::from(sampler, location, mode);
         return enpycapsulate(tensor);
     }
 };
 
-template <typename Property>
+template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType, typename Property>
 struct DEFAULT_VISIBILITY PyEncapsulator final {
     static PyCapsule wrap(
-        //SystemView& sysview, 
+        const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler, 
         AccessLocation location, AccessMode mode = kReadWrite
     )
     {
@@ -60,7 +60,7 @@ struct DEFAULT_VISIBILITY PyEncapsulator final {
         if (!sysview.in_context_manager())
             throw std::runtime_error("Cannot access property outside a context manager.");
         */             
-        auto tensor = Property::from(sysview, location, mode);
+        auto tensor = Property::from(sampler, location, mode);
         auto capsule = enpycapsulate(tensor, /* autodestruct = */ false);
         kPyCapsulesPool.push_back(std::make_tuple(capsule.ptr(), tensor, tensor->deleter));
         // We manually delete the tensor when exiting the context manager,
