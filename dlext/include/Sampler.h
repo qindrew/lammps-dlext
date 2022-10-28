@@ -202,11 +202,11 @@ DLManagedTensorPtr wrap(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sam
                         int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0)
 {
     assert((size2 >= 1));
-/*
-    auto location = sysview.is_gpu_enabled() ? requested_location : kOnHost;
-    auto handle = cxx11utils::make_unique<ArrayHandle<T>>(
-        INVOKE(*(sysview.particle_data()), getter)(), location, mode
-    );
+
+    // if gpus are available for use (queried by Fix)
+    auto location = sampler.is_gpu_enabled() ? requested_location : kOnHost;
+    // get the actual pointer to the per-atom array from Fix
+    auto handle = cxx11utils::make_unique<ArrayHandle<T>>(INVOKE(*(sysview.particle_data()), getter)(), location, mode);
     auto bridge = cxx11utils::make_unique<DLDataBridge<T>>(handle);
 
 #ifdef ENABLE_CUDA
@@ -219,29 +219,32 @@ DLManagedTensorPtr wrap(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sam
     bridge->tensor.deleter = delete_bridge<T>;
 
     auto& dltensor = bridge->tensor.dl_tensor;
+    // cast handle->data to void*
     dltensor.data = opaque(bridge->handle->data);
     dltensor.device = dldevice(sysview, gpu_flag);
+    // dtype()
     dltensor.dtype = dtype<T>();
 
     auto& shape = bridge->shape;
-    int n
-    //shape.push_back(particle_number<A>(sysview));
+    // first be the number of particles
+    shape.push_back(particle_number<A>(sysview));
     if (size2 > 1)
         shape.push_back(size2);
-
+    // from one particle datum to the next one
     auto& strides = bridge->strides;
     strides.push_back(stride1<T>() + stride1_offset);
     if (size2 > 1)
         strides.push_back(1);
 
-    dltensor.ndim = shape.size();
+    dltensor.ndim = shape.size(); // 1 or 2 dims
     dltensor.shape = reinterpret_cast<std::int64_t*>(shape.data());
     dltensor.strides = reinterpret_cast<std::int64_t*>(strides.data());
+    // offset for the beginning pointer
     dltensor.byte_offset = offset;
-*/
-    return nullptr; //&(bridge.release()->tensor);
+
+    return &(bridge.release()->tensor);
 }
-/*
+
 struct PositionsTypes final {
     static DLManagedTensorPtr from(
         const SystemView& sysview, const AccessLocation location, AccessMode mode
@@ -250,7 +253,7 @@ struct PositionsTypes final {
         return wrap(sysview, location, mode, 4);
     }
 };
-*/
+
 /*
 struct VelocitiesMasses final {
     static DLManagedTensorPtr from(

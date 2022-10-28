@@ -12,6 +12,8 @@
 #include <type_traits>
 #include <vector>
 
+// DLPack: https://github.com/dmlc/dlpack/blob/main/include/dlpack/dlpack.h
+
 namespace dlext
 {
 
@@ -80,7 +82,7 @@ typedef double Scalar;
 struct Scalar3 { Scalar x, y, z; };
 struct Scalar4 { Scalar x, y, z, w; };
 
-
+// cast T* into to void* 
 template <typename T>
 inline void* opaque(T* data) { return static_cast<void*>(data); }
 
