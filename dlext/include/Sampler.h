@@ -183,14 +183,16 @@ void Sampler<ExternalUpdater, Wrapper, DeviceType>::forward_data(Callback callba
     callback(pos_capsule, vel_capsule, rtags_capsule, img_capsule, force_capsule, n);
 */    
 }
-/*
-inline DLDevice dldevice(const SystemView& sysview, bool gpu_flag)
+
+template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
+inline DLDevice dldevice(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler,
+                         bool gpu_flag)
 {
-    return DLDevice { gpu_flag ? kDLCUDA : kDLCPU, 
-                      0 //sysview.get_device_id(gpu_flag)
-                       };
+    int gpu_id = 0;
+    auto device_id = gpu_id; // be careful here 
+    return DLDevice { gpu_flag ? kDLCUDA : kDLCPU, device_id };
 }
-*/
+
 // see atom_kokkos.h for executation space and datamask
 /*
 */

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// This file is part of `hoomd-dlext`, see LICENSE.md
+// This file is part of `lammps-dlext`, see LICENSE.md
 
 #ifndef LAMMPS_DLPACK_EXTENSION_H_
 #define LAMMPS_DLPACK_EXTENSION_H_
@@ -7,7 +7,6 @@
 #include "cxx11utils.h"
 #include "dlpack/dlpack.h"
 #include "lammps.h"
-
 #include "kokkos_type.h"
 
 #include <type_traits>
@@ -24,6 +23,7 @@ using namespace Kokkos;
 using DLManagedTensorPtr = DLManagedTensor*;
 using DLManagedTensorDeleter = void (*)(DLManagedTensorPtr);
 
+// see kokkos_type.h for example of tdual_array
 template <typename T>
 using tdual_array = Kokkos::DualView<T, Kokkos::LayoutRight, Kokkos::CudaSpace>;
 
@@ -60,7 +60,7 @@ struct DLDataBridge {
     DLManagedTensor tensor;
 
     DLDataBridge(ArrayHandleUPtr<T>& handle)
-        //: handle { std::move(handle) }
+        : handle { std::move(handle) }
     { }
 };
 
