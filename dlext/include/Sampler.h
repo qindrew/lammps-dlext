@@ -99,7 +99,6 @@ public:
     void forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n);
 
 private:
-    //SystemView _sysview;
     ExternalUpdater _update_callback;
     AccessLocation _location;
     AccessMode _mode;
@@ -119,15 +118,12 @@ private:
 
        
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
-Sampler<ExternalUpdater, Wrapper, DeviceType>::Sampler(
-    //SystemView sysview,
-    LAMMPS* lmp, int narg, char** arg,
+Sampler<ExternalUpdater, Wrapper, DeviceType>::Sampler(LAMMPS* lmp, int narg, char** arg,
     ExternalUpdater update, AccessLocation location, AccessMode mode)
-    : Fix(lmp, narg, arg)
-    //, _sysview { sysview }
-    , _update_callback { update }
-    , _location { location }
-    , _mode { mode }
+    : Fix(lmp, narg, arg),
+    _update_callback { update },
+    _location { location },
+    _mode { mode }
 { 
     this->setSimulator(lmp);
 
@@ -169,19 +165,18 @@ void Sampler<ExternalUpdater, Wrapper, DeviceType>::forward_data(Callback callba
 
     /*
         TODO: wrap these KOKKOS arrays into DLManagedTensor to pass to callback
-        Wrapper and the structs (PositionTypes, VelocitiesMasses, etc.) are currently residing in SystemView.h
     */
-/*    
-    auto pos_capsule = Wrapper<PositionsTypes>::wrap(lmp, location, mode);
-    auto vel_capsule = Wrapper<VelocitiesMasses>::wrap(lmp, location, mode);
-    auto rtags_capsule = Wrapper<RTags>::wrap(lmp, location, mode);
-    auto img_capsule = Wrapper<Images>::wrap(lmp, location, mode);
-    auto force_capsule = Wrapper<NetForces>::wrap(lmp, location, kReadWrite);
+    int nlocal = atom->nlocal;
+    auto pos_capsule = wrap(x.data(), location, mode, 1, 3*nlocal);
+    auto vel_capsule = wrap(v.data(), location, mode, 1, 3*nlocal);
+    auto type_capsule = wrap(type.data(), location, mode, 1, nlocal);
+    auto tag_capsule = wrap(tag.data(), location, mode, 1, nlocal);
+    auto force_capsule = wrap(f.data(), location, kReadWrite, 1, 3*nlocal);
 
     // callback will be responsible for advancing the simulation for n steps
 
-    callback(pos_capsule, vel_capsule, rtags_capsule, img_capsule, force_capsule, n);
-*/    
+//    callback(pos_capsule, vel_capsule, rtags_capsule, img_capsule, force_capsule, n);
+    
 }
 
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
@@ -193,33 +188,28 @@ inline DLDevice dldevice(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sa
     return DLDevice { gpu_flag ? kDLCUDA : kDLCPU, device_id };
 }
 
-// see atom_kokkos.h for executation space and datamask
+// see atom_kokkos.h for execution space and datamask
 /*
 */
-template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
-DLManagedTensorPtr wrap(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler,
-                        const AccessLocation location, const AccessMode mode,
-                        int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0)
+template <typename ExternalUpdater, class DeviceType, typename T>
+DLManagedTensorPtr wrap(void* data, const AccessLocation location, const AccessMode mode, const int rows, const int cols)
 {
-    assert((size2 >= 1));
-
-    // if gpus are available for use (queried by Fix)
-    auto location = sampler.is_gpu_enabled() ? requested_location : kOnHost;
-    // get the actual pointer to the per-atom array from Fix
-    auto handle = cxx11utils::make_unique<ArrayHandle<T>>(INVOKE(*(sysview.particle_data()), getter)(), location, mode);
-    auto bridge = cxx11utils::make_unique<DLDataBridge<T>>(handle);
-
-#ifdef ENABLE_CUDA
-    auto gpu_flag = (location == kOnDevice);
+/*
+#ifdef KOKKOS_ENABLE_CUDA
+    bool gpu_flag = (location == kOnDevice);
 #else
-    auto gpu_flag = false;
+    bool gpu_flag = false;
 #endif
+
+    auto location = gpu_flag ? kOnDevice : kOnHost;
+    auto handle = cxx11utils::make_unique<T>(data, location, mode );
+    auto bridge = cxx11utils::make_unique<DLDataBridge<T>>(handle);
 
     bridge->tensor.manager_ctx = bridge.get();
     bridge->tensor.deleter = delete_bridge<T>;
 
     auto& dltensor = bridge->tensor.dl_tensor;
-    // cast handle->data to void*
+    // cast handle->data to void* -- no need
     dltensor.data = opaque(bridge->handle->data);
     dltensor.device = dldevice(sysview, gpu_flag);
     // dtype()
@@ -243,18 +233,20 @@ DLManagedTensorPtr wrap(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sam
     dltensor.byte_offset = offset;
 
     return &(bridge.release()->tensor);
+*/
+    return nullptr;    
 }
-
-struct PositionsTypes final {
+/*
+struct Positions final {
     static DLManagedTensorPtr from(
-        const SystemView& sysview, const AccessLocation location, AccessMode mode
+        const ArrayTypes<DeviceType>::t_x_array& x, const AccessLocation location, AccessMode mode
     )
     {
-        return wrap(sysview, location, mode, 4);
+        return wrap(x, location, mode, 3);
     }
 };
 
-/*
+
 struct VelocitiesMasses final {
     static DLManagedTensorPtr from(
         const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
