@@ -4,12 +4,13 @@
 #ifndef DLEXT_SAMPLER_H_
 #define DLEXT_SAMPLER_H_
 
-#include "SystemView.h"
+#include "DLExt.h"
+//#include "SystemView.h"
 #include "KOKKOS/kokkos_type.h"
+#include "atom_kokkos.h"
 #include "atom_masks.h"
 #include "fix.h"
 #include "lammps.h"
-
 
 using namespace LAMMPS_NS;
 
@@ -25,14 +26,14 @@ struct access_location {
     //! The enum
     enum Enum {
         host,   //!< Ask to acquire the data on the host
-#ifdef ENABLE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
         device  //!< Ask to acquire the data on the device
 #endif
     };
 };
 using AccessLocation = access_location::Enum;
 const auto kOnHost = access_location::host;
-#ifdef ENABLE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
 const auto kOnDevice = access_location::device;
 #endif
 
@@ -94,7 +95,7 @@ public:
     //!
     //! The data for the particles information is requested at the given `location`
     //! and access `mode`. NOTE: Forces are always passed in readwrite mode.
-    //! TODO: Move Wrapper from SystemView.h to here
+
     template <typename Callback>
     void forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n);
 
@@ -163,15 +164,14 @@ void Sampler<ExternalUpdater, Wrapper, DeviceType>::forward_data(Callback callba
     if (atomKK->torque_flag)
         torque = atomKK->k_torque.template view<DeviceType>();
 
-    /*
-        TODO: wrap these KOKKOS arrays into DLManagedTensor to pass to callback
-    */
+    // wrap these KOKKOS arrays into DLManagedTensor to pass to callback
+
     int nlocal = atom->nlocal;
-    auto pos_capsule = wrap(x.data(), location, mode, 1, 3*nlocal);
-    auto vel_capsule = wrap(v.data(), location, mode, 1, 3*nlocal);
-    auto type_capsule = wrap(type.data(), location, mode, 1, nlocal);
-    auto tag_capsule = wrap(tag.data(), location, mode, 1, nlocal);
-    auto force_capsule = wrap(f.data(), location, kReadWrite, 1, 3*nlocal);
+    auto pos_capsule = wrap(x.data(), location, mode, nlocal, 1, 3*nlocal);
+    auto vel_capsule = wrap(v.data(), location, mode, nlocal, 1, 3*nlocal);
+    auto type_capsule = wrap(type.data(), location, mode, nlocal, 1, nlocal);
+    auto tag_capsule = wrap(tag.data(), location, mode, nlocal, 1, nlocal);
+    auto force_capsule = wrap(f.data(), location, kReadWrite, nlocal, 1, 3*nlocal);
 
     // callback will be responsible for advancing the simulation for n steps
 
@@ -188,21 +188,24 @@ inline DLDevice dldevice(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sa
     return DLDevice { gpu_flag ? kDLCUDA : kDLCPU, device_id };
 }
 
-// see atom_kokkos.h for execution space and datamask
+// see atom_kokkos.h for execution space and datamasks
 /*
 */
-template <typename ExternalUpdater, class DeviceType, typename T>
-DLManagedTensorPtr wrap(void* data, const AccessLocation location, const AccessMode mode, const int rows, const int cols)
+template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType, typename T>
+DLManagedTensorPtr wrap(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler,
+                        void* data, const AccessLocation location, const AccessMode mode, const int num_particles,
+                        int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0)
 {
-/*
+    assert((size2 >= 1));
+
 #ifdef KOKKOS_ENABLE_CUDA
     bool gpu_flag = (location == kOnDevice);
 #else
     bool gpu_flag = false;
 #endif
 
-    auto location = gpu_flag ? kOnDevice : kOnHost;
-    auto handle = cxx11utils::make_unique<T>(data, location, mode );
+    //auto location = gpu_flag ? kOnDevice : kOnHost;
+    auto handle = cxx11utils::make_unique<T>(data, location, mode);
     auto bridge = cxx11utils::make_unique<DLDataBridge<T>>(handle);
 
     bridge->tensor.manager_ctx = bridge.get();
@@ -211,15 +214,15 @@ DLManagedTensorPtr wrap(void* data, const AccessLocation location, const AccessM
     auto& dltensor = bridge->tensor.dl_tensor;
     // cast handle->data to void* -- no need
     dltensor.data = opaque(bridge->handle->data);
-    dltensor.device = dldevice(sysview, gpu_flag);
+    dltensor.device = dldevice(sampler, gpu_flag);
     // dtype()
     dltensor.dtype = dtype<T>();
 
     auto& shape = bridge->shape;
     // first be the number of particles
-    shape.push_back(particle_number<A>(sysview));
+    shape.push_back(num_particles);
     if (size2 > 1)
-        shape.push_back(size2);
+       shape.push_back(size2);
     // from one particle datum to the next one
     auto& strides = bridge->strides;
     strides.push_back(stride1<T>() + stride1_offset);
@@ -233,8 +236,6 @@ DLManagedTensorPtr wrap(void* data, const AccessLocation location, const AccessM
     dltensor.byte_offset = offset;
 
     return &(bridge.release()->tensor);
-*/
-    return nullptr;    
 }
 /*
 struct Positions final {
@@ -243,121 +244,6 @@ struct Positions final {
     )
     {
         return wrap(x, location, mode, 3);
-    }
-};
-
-
-struct VelocitiesMasses final {
-    static DLManagedTensorPtr from(
-        const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
-    )
-    {
-        return wrap(sysview, location, mode, 4);
-    }
-};
-*/
-/*
-struct Orientations final {
-    static DLManagedTensorPtr from(
-        const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
-    )
-    {
-        return wrap(sysview, &ParticleData::getOrientationArray, location, mode, 4);
-    }
-};
-*/
-/*
-struct AngularMomenta final {
-    static DLManagedTensorPtr from(
-        const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
-    )
-    {
-        return wrap(sysview, &ParticleData::getAngularMomentumArray, location, mode, 4);
-    }
-};
-*/
-
-/*
-struct MomentsOfInertia final {
-    static DLManagedTensorPtr from(
-        const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
-    )
-    {
-        return wrap(sysview, &ParticleData::getMomentsOfInertiaArray, location, mode, 3);
-    }
-};
-*/
-
-/*
-struct Charges final {
-    static DLManagedTensorPtr from(
-        const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
-    )
-    {
-        return wrap(sysview, &ParticleData::getCharges, location, mode);
-    }
-};
-
-struct Diameters final {
-    static DLManagedTensorPtr from(
-        const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
-    )
-    {
-        return wrap(sysview, &ParticleData::getDiameters, location, mode);
-    }
-};
-
-struct Images final {
-    static DLManagedTensorPtr from(
-        const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
-    )
-    {
-        return wrap(sysview, &ParticleData::getImages, location, mode, 3);
-    }
-};
-
-struct Tags final {
-    static DLManagedTensorPtr from(
-        const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
-    )
-    {
-        return wrap(sysview, &ParticleData::getTags, location, mode);
-    }
-};
-
-struct RTags final {
-    static DLManagedTensorPtr from(
-        const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
-    )
-    {
-        return wrap(sysview, &ParticleData::getRTags, location, mode);
-    }
-};
-
-struct NetForces final {
-    static DLManagedTensorPtr from(
-        const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
-    )
-    {
-        return wrap(sysview, &ParticleData::getNetForce, location, mode, 4);
-    }
-};
-
-struct NetTorques final {
-    static DLManagedTensorPtr from(
-        const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
-    )
-    {
-        return wrap(sysview, &ParticleData::getNetTorqueArray, location, mode, 4);
-    }
-};
-
-struct NetVirial final {
-    static DLManagedTensorPtr from(
-        const SystemView& sysview, AccessLocation location, AccessMode mode = kReadWrite
-    )
-    {
-        return wrap(sysview, &ParticleData::getNetVirial, location, mode, 6);
     }
 };
 */
