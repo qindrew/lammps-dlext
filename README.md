@@ -15,11 +15,12 @@ Install upstream LAMMPS
    cd lammps
    ccmake -S cmake -B build -D PKG_KOKKOS=on -D Kokkos_ENABLE_CUDA=on -D Kokkos_ARCH_AMPERE80=on \
      -D PKG_MOLECULE=on -D PKG_KSPACE=on -D BUILD_SHARED_LIBS=on -D PKG_PYTHON=on -D FFT=KISS \
-     -D CMAKE_INSTALL_PREFIX=`python3 -c "import site; print(site.getsitepackages()[0])"`
+     -D CMAKE_INSTALL_PREFIX=`python3 -c "import sys; print(sys.prefix)""`
    cd build
    make -j6
    make install
 ```
+where `CMAKE_INSTALL_PREFIX` points to the environment level, not down to `lib/python3.x/site-packages`.
 The following steps are needed to compile `lammpds-dlext` because the header files are not copied into the LAMMPS installation folder:
 * Copy the folder ```$LMP_PATH/src/fmt``` into the installation folder ```include/lammps/fmt```
 * Copy several key headers from ```$LMP_PATH/src/KOKKOS``` (e.g. kokkos_type.h, atom_kokkos.h, memory_kokkos.h, comm_kokkos.h) into ```include/lammps/KOKKOS```
