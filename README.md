@@ -15,12 +15,26 @@ Install upstream LAMMPS
    cd lammps
    ccmake -S cmake -B build -D PKG_KOKKOS=on -D Kokkos_ENABLE_CUDA=on -D Kokkos_ARCH_AMPERE80=on \
      -D PKG_MOLECULE=on -D PKG_KSPACE=on -D BUILD_SHARED_LIBS=on -D PKG_PYTHON=on -D FFT=KISS \
-     -D CMAKE_INSTALL_PREFIX=`python3 -c "import sys; print(sys.prefix)""`
+     -D CMAKE_INSTALL_PREFIX=`python3 -c "import sys; print(sys.prefix)"` -D Python_EXECUTABLE=`which python3`
    cd build
    make -j6
    make install
 ```
 where `CMAKE_INSTALL_PREFIX` points to the environment level, not down to `lib/python3.x/site-packages`.
+
+If the build succeeds, the shared library liblammps.so is installed into $CMAKE_INSTALL_PREFIX/lib64.
+Also, we also need the shared lib libpython3.x.so.1, which is $CMAKE_INSTALL_PREFIX/lib. Depending on the miniconda/anaconda version
+these two paths may, or may not, be prepended to LD_LIBRARY_PATH. If they are not, do so
+
+export LD_LIBRARY_PATH=$CMAKE_INSTALL_PREFIX/lib64/lib:$CMAKE_INSTALL_PREFIX/lib64/lib64:$LD_LIBRARY_PATH
+
+where $CMAKE_INSTALL_PREFIX is the full path to the top-level folder of the virtual environment.
+
+To test the installation of the LAMMPS python module
+
+python3 -c "from lammps import lammps; p = lammps()"
+
+
 The following steps are needed to compile `lammpds-dlext` because the header files are not copied into the LAMMPS installation folder:
 * Copy the folder ```$LMP_PATH/src/fmt``` into the installation folder ```include/lammps/fmt```
 * Copy several key headers from ```$LMP_PATH/src/KOKKOS``` (e.g. kokkos_type.h, atom_kokkos.h, memory_kokkos.h, comm_kokkos.h) into ```include/lammps/KOKKOS```
