@@ -5,15 +5,14 @@
 #define DLEXT_SAMPLER_H_
 
 #include "DLExt.h"
-//#include "SystemView.h"
 #include "KOKKOS/kokkos_type.h"
 #include "atom_kokkos.h"
 #include "atom_masks.h"
 #include "fix.h"
 #include "lammps.h"
 
-using namespace LAMMPS_NS;
-
+namespace LAMMPS_NS
+{
 namespace dlext
 {
 
@@ -70,21 +69,7 @@ public:
         AccessMode mode
     );
 
-    //! There is no need for SystemDefinition (a HOOMD term) for SystemView (a PySAGES term)
-    //! because all Fix classes have pointers to all other data structures Atom, Pair
-    void setSystemDefinition(void* sysdef) override
-    {
-        return;
-    }
-
-    //! Override Fix::post_force(): invoked after force computation 
-    void post_force(TimeStep timestep) override
-    {
-        forward_data(_update_callback, _location, _mode, timestep);
-    }
-
-    //! simply returns this
-    void* system_view() const;
+    int set_mask() override;
 
     //! Wraps the system positions, velocities, reverse tags, images and forces as
     //! DLPack tensors and passes them to the external function `callback`.
@@ -98,6 +83,12 @@ public:
 
     template <typename Callback>
     void forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n);
+
+    auto get_positions() { return x; }
+    auto get_velocities() { return v; }
+    auto get_net_forces() { return f; }
+    auto get_types() { return type; }
+    auto get_images() { return image; }
 
 private:
     ExternalUpdater _update_callback;
@@ -115,69 +106,8 @@ private:
     typename ArrayTypes<DeviceType>::t_int_1d_randomread type;
     typename ArrayTypes<DeviceType>::t_int_1d mask;
     typename ArrayTypes<DeviceType>::t_tagint_1d tag;
+    typename ArrayTypes<DeviceType>::t_imageint_1d image;
 };
-
-       
-template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
-Sampler<ExternalUpdater, Wrapper, DeviceType>::Sampler(LAMMPS* lmp, int narg, char** arg,
-    ExternalUpdater update, AccessLocation location, AccessMode mode)
-    : Fix(lmp, narg, arg),
-    _update_callback { update },
-    _location { location },
-    _mode { mode }
-{ 
-    this->setSimulator(lmp);
-
-    kokkosable = 1;
-    atomKK = (AtomKokkos *) atom;
-
-    execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
-    
-    datamask_read   = X_MASK | V_MASK | F_MASK | TYPE_MASK | OMEGA_MASK | MASK_MASK | TORQUE_MASK | ANGMOM_MASK;
-    datamask_modify = X_MASK | V_MASK | F_MASK | OMEGA_MASK | TORQUE_MASK | ANGMOM_MASK;
-}
-
-template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
-void* Sampler<ExternalUpdater, Wrapper, DeviceType>::system_view() const
-{
-    return this->lmp;
-}
-
-template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
-template <typename Callback>
-void Sampler<ExternalUpdater, Wrapper, DeviceType>::forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
-{
-    atomKK->sync(execution_space,datamask_read);
-
-    x = atomKK->k_x.template view<DeviceType>();
-    v = atomKK->k_v.template view<DeviceType>();
-    f = atomKK->k_f.template view<DeviceType>();
-    type = atomKK->k_type.template view<DeviceType>();
-    tag = atomKK->k_tag.template view<DeviceType>();
-
-    if (atomKK->omega_flag)
-        omega  = atomKK->k_omega.template view<DeviceType>();
-
-    if (atomKK->angmom_flag)
-        angmom = atomKK->k_angmom.template view<DeviceType>();
-
-    if (atomKK->torque_flag)
-        torque = atomKK->k_torque.template view<DeviceType>();
-
-    // wrap these KOKKOS arrays into DLManagedTensor to pass to callback
-
-    int nlocal = atom->nlocal;
-    auto pos_capsule = wrap(x.data(), location, mode, nlocal, 1, 3*nlocal);
-    auto vel_capsule = wrap(v.data(), location, mode, nlocal, 1, 3*nlocal);
-    auto type_capsule = wrap(type.data(), location, mode, nlocal, 1, nlocal);
-    auto tag_capsule = wrap(tag.data(), location, mode, nlocal, 1, nlocal);
-    auto force_capsule = wrap(f.data(), location, kReadWrite, nlocal, 1, 3*nlocal);
-
-    // callback will be responsible for advancing the simulation for n steps
-
-//    callback(pos_capsule, vel_capsule, rtags_capsule, img_capsule, force_capsule, n);
-    
-}
 
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
 inline DLDevice dldevice(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler,
@@ -188,21 +118,25 @@ inline DLDevice dldevice(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sa
     return DLDevice { gpu_flag ? kDLCUDA : kDLCPU, device_id };
 }
 
-// see atom_kokkos.h for execution space and datamasks
 /*
+  wrap is called by Sampler::forward_data()
+  data : a generic pointer to an atom property (x, v, f)
+  location
+  mode
+  num particles,
 */
-template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType, typename T>
-DLManagedTensorPtr wrap(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler,
-                        void* data, const AccessLocation location, const AccessMode mode, const int num_particles,
+template <typename T>
+DLManagedTensorPtr wrap(auto data, const AccessLocation location, const AccessMode mode,
+                        const int num_particles,
                         int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0)
 {
     assert((size2 >= 1));
 
-#ifdef KOKKOS_ENABLE_CUDA
+    #ifdef KOKKOS_ENABLE_CUDA
     bool gpu_flag = (location == kOnDevice);
-#else
+    #else
     bool gpu_flag = false;
-#endif
+    #endif
 
     //auto location = gpu_flag ? kOnDevice : kOnHost;
     auto handle = cxx11utils::make_unique<T>(data, location, mode);
@@ -237,17 +171,48 @@ DLManagedTensorPtr wrap(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sam
 
     return &(bridge.release()->tensor);
 }
-/*
+
+// the following structs provide a way to return the pointer to the corresponding atom property
+//   used in PyDLExt.h and lammps_dlext.cc
+
 struct Positions final {
-    static DLManagedTensorPtr from(
-        const ArrayTypes<DeviceType>::t_x_array& x, const AccessLocation location, AccessMode mode
-    )
+    static DLManagedTensorPtr from(const AccessLocation location, AccessMode mode)
     {
+        
         return wrap(x, location, mode, 3);
     }
 };
-*/
 
-}  // namespace dlext
+struct Types final {
+    static DLManagedTensorPtr from(auto 
+        const AccessLocation location, AccessMode mode
+    )
+    {
+        return wrap(sampler.get_types(), location, mode, 1);
+    }
+};
+
+struct Velocities final {
+    static DLManagedTensorPtr from(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler,
+        const AccessLocation location, AccessMode mode
+    )
+    {
+        return wrap(sampler.get_velocities(), location, mode, 3);
+    }
+};
+
+struct NetForces final {
+    static DLManagedTensorPtr from(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler,
+        const AccessLocation location, AccessMode mode
+    )
+    {
+        return wrap(sampler.get_net_forces(), location, mode, 3);
+    }
+};
+
+
+} // namespace dlext
+
+} // namespace LAMMPS_NS
 
 #endif  // DLEXT_SAMPLER_H_

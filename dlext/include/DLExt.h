@@ -14,6 +14,8 @@
 
 // DLPack: https://github.com/dmlc/dlpack/blob/main/include/dlpack/dlpack.h
 
+namespace LAMMPS_NS
+{
 namespace dlext
 {
 
@@ -116,5 +118,7 @@ template <>
 constexpr int64_t stride1<unsigned int>() { return 1; }
 
 }  // namespace dlext
+
+} // namespace LAMMPS_NS
 
 #endif  // LAMMPS_DLPACK_EXTENSION_H_
