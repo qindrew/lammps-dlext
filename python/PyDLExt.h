@@ -40,10 +40,9 @@ inline PyCapsule pyencapsulate(DLManagedTensorPtr tensor, bool autodestruct = tr
     return capsule;
 }
 
-template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType, typename Property>
+template <typename Property>
 struct DEFAULT_VISIBILITY PyUnsafeEncapsulator final {
-    static PyCapsule wrap_property(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler,
-     AccessLocation location, AccessMode mode = kReadWrite
+    static PyCapsule wrap_property(AccessLocation location, AccessMode mode = kReadWrite
     )
     {
         DLManagedTensorPtr tensor = Property::from(sampler, location, mode);

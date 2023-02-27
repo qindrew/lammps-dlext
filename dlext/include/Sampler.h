@@ -63,13 +63,13 @@ template <typename ExternalUpdater, template <typename> class Wrapper, class Dev
 class DEFAULT_VISIBILITY Sampler : public Fix {
 public:
     //! Constructor
-    Sampler(LAMMPS* lmp, int narg, char** arg,
+    Sampler(LAMMPS* lmp, /*int narg, char** arg,*/
         ExternalUpdater update_callback,
         AccessLocation location,
         AccessMode mode
     );
 
-    int set_mask() override;
+    int setmask() override;
 
     //! Wraps the system positions, velocities, reverse tags, images and forces as
     //! DLPack tensors and passes them to the external function `callback`.
@@ -84,11 +84,17 @@ public:
     template <typename Callback>
     void forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n);
 
-    auto get_positions() { return x; }
-    auto get_velocities() { return v; }
-    auto get_net_forces() { return f; }
-    auto get_types() { return type; }
-    auto get_images() { return image; }
+    auto get_positions() { return x.data(); }
+    auto get_velocities() { return v.data(); }
+    auto get_net_forces() { return f.data(); }
+    auto get_types() { return type.data(); }
+    auto get_images() { return image.data(); }
+
+    DLDevice dldevice(bool gpu_flag);
+
+    template <typename T>
+    DLManagedTensorPtr wrap(const T* data, const AccessLocation location, const AccessMode mode,
+                        const int num_particles, int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0);
 
 private:
     ExternalUpdater _update_callback;
@@ -109,72 +115,10 @@ private:
     typename ArrayTypes<DeviceType>::t_imageint_1d image;
 };
 
-template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
-inline DLDevice dldevice(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler,
-                         bool gpu_flag)
-{
-    int gpu_id = 0;
-    auto device_id = gpu_id; // be careful here 
-    return DLDevice { gpu_flag ? kDLCUDA : kDLCPU, device_id };
-}
-
-/*
-  wrap is called by Sampler::forward_data()
-  data : a generic pointer to an atom property (x, v, f)
-  location
-  mode
-  num particles,
-*/
-template <typename T>
-DLManagedTensorPtr wrap(auto data, const AccessLocation location, const AccessMode mode,
-                        const int num_particles,
-                        int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0)
-{
-    assert((size2 >= 1));
-
-    #ifdef KOKKOS_ENABLE_CUDA
-    bool gpu_flag = (location == kOnDevice);
-    #else
-    bool gpu_flag = false;
-    #endif
-
-    //auto location = gpu_flag ? kOnDevice : kOnHost;
-    auto handle = cxx11utils::make_unique<T>(data, location, mode);
-    auto bridge = cxx11utils::make_unique<DLDataBridge<T>>(handle);
-
-    bridge->tensor.manager_ctx = bridge.get();
-    bridge->tensor.deleter = delete_bridge<T>;
-
-    auto& dltensor = bridge->tensor.dl_tensor;
-    // cast handle->data to void* -- no need
-    dltensor.data = opaque(bridge->handle->data);
-    dltensor.device = dldevice(sampler, gpu_flag);
-    // dtype()
-    dltensor.dtype = dtype<T>();
-
-    auto& shape = bridge->shape;
-    // first be the number of particles
-    shape.push_back(num_particles);
-    if (size2 > 1)
-       shape.push_back(size2);
-    // from one particle datum to the next one
-    auto& strides = bridge->strides;
-    strides.push_back(stride1<T>() + stride1_offset);
-    if (size2 > 1)
-        strides.push_back(1);
-
-    dltensor.ndim = shape.size(); // 1 or 2 dims
-    dltensor.shape = reinterpret_cast<std::int64_t*>(shape.data());
-    dltensor.strides = reinterpret_cast<std::int64_t*>(strides.data());
-    // offset for the beginning pointer
-    dltensor.byte_offset = offset;
-
-    return &(bridge.release()->tensor);
-}
 
 // the following structs provide a way to return the pointer to the corresponding atom property
 //   used in PyDLExt.h and lammps_dlext.cc
-
+/*
 struct Positions final {
     static DLManagedTensorPtr from(const AccessLocation location, AccessMode mode)
     {
@@ -209,7 +153,7 @@ struct NetForces final {
         return wrap(sampler.get_net_forces(), location, mode, 3);
     }
 };
-
+*/
 
 } // namespace dlext
 
