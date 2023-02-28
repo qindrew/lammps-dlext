@@ -41,6 +41,7 @@ The following steps are needed to compile `lammpds-dlext` because the header fil
 * Copy KOKKOS-generated header files from ```build/lib/kokkos/KokkosCore_*.hpp``` and ```build/lib/kokkos/KokkosCore_config.h```  into ```include/lammps/KOKKOS```
 * Copy all the KOKKOS source files from ```$LMP_PATH/lib/kokkos/core/src```  into ```include/lammps/KOKKOS/core/src```
 * Copy all the KOKKOS source files from ```$LMP_PATH/lib/kokkos/containers/src``` into ```include/lammps/KOKKOS/containers/src```
+* Copy ```$LMP_PATH/src/fix_external.h``` to ```include/lammps``` as Sampler needs to be derived from a non-abstract Fix class rather than the abstract Fix
 
 Build LAMMPS dlext (this package):
 

@@ -9,7 +9,7 @@
 #include "atom_kokkos.h"
 #include "atom_masks.h"
 #include "fix_external.h"
-#include "lammps.h"
+//#include "lammps.h"
 
 namespace LAMMPS_NS
 {
@@ -59,6 +59,7 @@ using TimeStep = int;
     (docs.lammps.org/fix_external.html)
   
 */
+
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
 class DEFAULT_VISIBILITY Sampler : public FixExternal {
 public:

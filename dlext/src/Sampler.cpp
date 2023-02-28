@@ -7,8 +7,10 @@ using namespace LAMMPS_NS;
 using namespace LAMMPS_NS::dlext;
 using namespace FixConst;
 
+#define SamplerT Sampler<ExternalUpdater, Wrapper, DeviceType>
+
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
-Sampler<ExternalUpdater, Wrapper, DeviceType>::Sampler(LAMMPS* lmp, int narg, char** arg,
+SamplerT::Sampler(LAMMPS* lmp, int narg, char** arg,
     ExternalUpdater update, AccessLocation location, AccessMode mode) : FixExternal(lmp, narg, arg),
     _update_callback { update },
     _location { location },
@@ -24,7 +26,7 @@ Sampler<ExternalUpdater, Wrapper, DeviceType>::Sampler(LAMMPS* lmp, int narg, ch
 }
 
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
-int Sampler<ExternalUpdater, Wrapper, DeviceType>::setmask()
+int SamplerT::setmask()
 {
     int mask = 0;
     mask |= POST_FORCE;
@@ -34,7 +36,7 @@ int Sampler<ExternalUpdater, Wrapper, DeviceType>::setmask()
 
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
 template <typename Callback>
-void Sampler<ExternalUpdater, Wrapper, DeviceType>::forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
+void SamplerT::forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
 {
     atomKK->sync(execution_space,datamask_read);
 
@@ -72,7 +74,7 @@ void Sampler<ExternalUpdater, Wrapper, DeviceType>::forward_data(Callback callba
 }
 
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
-inline DLDevice Sampler<ExternalUpdater, Wrapper, DeviceType>::dldevice(bool gpu_flag)
+inline DLDevice SamplerT::dldevice(bool gpu_flag)
 {
     int gpu_id = 0;
     auto device_id = gpu_id; // be careful here 
@@ -88,8 +90,9 @@ inline DLDevice Sampler<ExternalUpdater, Wrapper, DeviceType>::dldevice(bool gpu
 */
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
 template <typename T>
-DLManagedTensorPtr Sampler<ExternalUpdater, Wrapper, DeviceType>::wrap(const T* data, const AccessLocation location, const AccessMode mode,
-                        const int num_particles, int64_t size2 /*=1*/, uint64_t offset /*= 0*/, uint64_t stride1_offset /*= 0*/)
+DLManagedTensorPtr SamplerT::wrap(const T* data, const AccessLocation location, const AccessMode mode,
+                                  const int num_particles, int64_t size2 /*=1*/,
+                                  uint64_t offset /*= 0*/, uint64_t stride1_offset /*= 0*/)
 {
     assert((size2 >= 1));
 
