@@ -8,7 +8,7 @@
 #include "KOKKOS/kokkos_type.h"
 #include "atom_kokkos.h"
 #include "atom_masks.h"
-#include "fix.h"
+#include "fix_external.h"
 #include "lammps.h"
 
 namespace LAMMPS_NS
@@ -60,10 +60,10 @@ using TimeStep = int;
   
 */
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
-class DEFAULT_VISIBILITY Sampler : public Fix {
+class DEFAULT_VISIBILITY Sampler : public FixExternal {
 public:
     //! Constructor
-    Sampler(LAMMPS* lmp, /*int narg, char** arg,*/
+    Sampler(LAMMPS* lmp, int narg, char** arg,
         ExternalUpdater update_callback,
         AccessLocation location,
         AccessMode mode

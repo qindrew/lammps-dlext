@@ -8,17 +8,12 @@ using namespace LAMMPS_NS::dlext;
 using namespace FixConst;
 
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
-Sampler<ExternalUpdater, Wrapper, DeviceType>::Sampler(LAMMPS* lmp, /* int narg, char** arg,*/
-    ExternalUpdater update, AccessLocation location, AccessMode mode) :
+Sampler<ExternalUpdater, Wrapper, DeviceType>::Sampler(LAMMPS* lmp, int narg, char** arg,
+    ExternalUpdater update, AccessLocation location, AccessMode mode) : FixExternal(lmp, narg, arg),
     _update_callback { update },
     _location { location },
     _mode { mode }
 { 
-    int narg = 0;
-    char** arg = nullptr;
-    Fix(lmp, narg, arg);
-    //this->setSimulator(lmp);
-
     kokkosable = 1;
     atomKK = (AtomKokkos *) atom;
 

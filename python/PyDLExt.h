@@ -45,7 +45,7 @@ struct DEFAULT_VISIBILITY PyUnsafeEncapsulator final {
     static PyCapsule wrap_property(AccessLocation location, AccessMode mode = kReadWrite
     )
     {
-        DLManagedTensorPtr tensor = Property::from(sampler, location, mode);
+        DLManagedTensorPtr tensor = Property::from(location, mode);
         return pyencapsulate(tensor);
     }
 };
