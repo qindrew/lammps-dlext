@@ -4,7 +4,7 @@ pybind11_add_module(${pybind11_MODULE_NAME} MODULE "")
 
 target_compile_features(${pybind11_MODULE_NAME} PRIVATE cxx_std_11)
 target_link_libraries(${pybind11_MODULE_NAME} PRIVATE ${PROJECT_NAME})
-target_sources(${pybind11_MODULE_NAME} PRIVATE lammps_dlext.cc)
+target_sources(${pybind11_MODULE_NAME} PRIVATE lammps_dlext.cpp)
 
 # add include path to pybind11 available from the virtual environment: $HOME/miniconda3/envs/pysages/include
 target_include_directories(${pybind11_MODULE_NAME} PUBLIC ${CMAKE_INSTALL_PREFIX}/../../../../include)
