@@ -11,8 +11,6 @@ using namespace LAMMPS_NS::dlext;
 
 void export_PySampler(py::module m)
 {
-    //using SamplerSPtr = std::shared_ptr<Sampler>;
- 
     using PyFunction = py::function;
     using PySampler = Sampler<PyFunction, PyEncapsulator, LMPDeviceType>;
     using PySamplerSPtr = std::shared_ptr<PySampler>;
@@ -21,10 +19,10 @@ void export_PySampler(py::module m)
         .def(py::init([](LAMMPS* lmp, std::vector<std::string> args, PyFunction function, AccessLocation location, AccessMode mode) {
           std::vector<char *> cstrs;
           cstrs.reserve(args.size());
-          for (auto &s : args) cstrs.push_back(const_cast<char *>(s.c_str()));
-          return (new Sampler<PyFunction, PyEncapsulator, LMPDeviceType>(lmp, cstrs.size(), cstrs.data(), function, location, mode));
+          for (auto &s : args) cstrs.push_back(&s[0]);
+          int narg = cstrs.size();
+          return (new Sampler<PyFunction, PyEncapsulator, LMPDeviceType>(lmp, narg, cstrs.data(), function, location, mode));
         }))
-        //.def("update", &PySampler::update)
         .def("get_positions", &PySampler::get_positions);
         //.def("get_velocities", &PySampler::get_velocities)
         //.def("get_net_forces", &PySampler::get_net_forces)
@@ -37,9 +35,9 @@ PYBIND11_MODULE(dlpack_extension, m)
 {
     // Enums
     py::enum_<AccessLocation>(m, "AccessLocation")
-        .value("OnHost", kOnHost)
-#ifdef KOKKOS_ENABLE_CUDA
         .value("OnDevice", kOnDevice)
+#ifdef KOKKOS_ENABLE_CUDA
+        .value("OnHost", kOnHost)
 #endif
         ;
 

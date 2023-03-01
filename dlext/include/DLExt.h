@@ -19,7 +19,6 @@ namespace LAMMPS_NS
 namespace dlext
 {
 
-using namespace LAMMPS_NS;
 using namespace Kokkos;
 
 // { // Aliases

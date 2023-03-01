@@ -9,7 +9,6 @@
 #include "atom_kokkos.h"
 #include "atom_masks.h"
 #include "fix_external.h"
-//#include "lammps.h"
 
 namespace LAMMPS_NS
 {
@@ -65,9 +64,9 @@ class DEFAULT_VISIBILITY Sampler : public FixExternal {
 public:
     //! Constructor
     Sampler(LAMMPS* lmp, int narg, char** arg,
-        ExternalUpdater update_callback,
-        AccessLocation location,
-        AccessMode mode
+            ExternalUpdater update_callback,
+            AccessLocation location,
+            AccessMode mode
     );
 
     int setmask() override;
