@@ -51,6 +51,8 @@ const auto kOverwrite = access_mode::overwrite;
 
 using TimeStep = int;
 
+using namespace FixConst;
+
 /*
   Sampler is essentially a LAMMPS fix that allows an external updater
   to advance atom positions based on the instantaneous values of the CVs
@@ -67,9 +69,27 @@ public:
             ExternalUpdater update_callback,
             AccessLocation location,
             AccessMode mode
-    );
+    ) : FixExternal(lmp, narg, arg),
+    _update_callback { update_callback },
+    _location { location },
+    _mode { mode }
+    { 
+        kokkosable = 1;
+        atomKK = (AtomKokkos *) atom;
 
-    int setmask() override;
+        execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
+        
+        datamask_read   = X_MASK | V_MASK | F_MASK | TYPE_MASK | IMAGE_MASK | OMEGA_MASK | MASK_MASK | TORQUE_MASK | ANGMOM_MASK;
+        datamask_modify = X_MASK | V_MASK | F_MASK | OMEGA_MASK | TORQUE_MASK | ANGMOM_MASK;
+    }
+
+    int setmask() override
+    {
+        int mask = 0;
+        mask |= POST_FORCE;
+        mask |= MIN_POST_FORCE;
+        return mask;
+    }
 
     //! Wraps the system positions, velocities, reverse tags, images and forces as
     //! DLPack tensors and passes them to the external function `callback`.

@@ -8,7 +8,7 @@ using namespace LAMMPS_NS::dlext;
 using namespace FixConst;
 
 #define SamplerT Sampler<ExternalUpdater, Wrapper, DeviceType>
-
+/*
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
 SamplerT::Sampler(LAMMPS* lmp, int narg, char** arg,
     ExternalUpdater update, AccessLocation location, AccessMode mode) : FixExternal(lmp, narg, arg),
@@ -33,7 +33,7 @@ int SamplerT::setmask()
     mask |= MIN_POST_FORCE;
     return mask;
 }
-
+*/
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
 template <typename Callback>
 void SamplerT::forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
