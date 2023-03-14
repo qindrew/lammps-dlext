@@ -26,22 +26,25 @@ If the build succeeds, the shared library liblammps.so is installed into $CMAKE_
 Also, we also need the shared lib libpython3.x.so.1, which is $CMAKE_INSTALL_PREFIX/lib. Depending on the miniconda/anaconda version
 these two paths may, or may not, be prepended to LD_LIBRARY_PATH. If they are not, do so
 
+```
 export LD_LIBRARY_PATH=$CMAKE_INSTALL_PREFIX/lib64/lib:$CMAKE_INSTALL_PREFIX/lib64/lib64:$LD_LIBRARY_PATH
-
-where $CMAKE_INSTALL_PREFIX is the full path to the top-level folder of the virtual environment.
+```
+where `$CMAKE_INSTALL_PREFIX` is the full path to the top-level folder of the virtual environment.
 
 To test the installation of the LAMMPS python module
 
+```
 python3 -c "from lammps import lammps; p = lammps()"
-
+```
 
 The following steps are needed to compile `lammpds-dlext` because the header files are not copied into the LAMMPS installation folder:
-* Copy the folder ```$LMP_PATH/src/fmt``` into the installation folder ```include/lammps/fmt```
-* Copy several key headers from ```$LMP_PATH/src/KOKKOS``` (e.g. kokkos_type.h, atom_kokkos.h, memory_kokkos.h, comm_kokkos.h) into ```include/lammps/KOKKOS```
 * Copy KOKKOS-generated header files from ```build/lib/kokkos/KokkosCore_*.hpp``` and ```build/lib/kokkos/KokkosCore_config.h```  into ```include/lammps/KOKKOS```
+* Copy the folder ```$LMP_PATH/src/fmt``` into the installation folder ```include/lammps/fmt```
+* Copy ```$LMP_PATH/src/fix_external.h``` to ```include/lammps``` as Sampler needs to be derived from a non-abstract Fix class rather than the abstract Fix
+* Copy several key headers from ```$LMP_PATH/src/KOKKOS``` (e.g. kokkos_type.h, atom_kokkos.h, memory_kokkos.h, comm_kokkos.h) into ```include/lammps/KOKKOS```
 * Copy all the KOKKOS source files from ```$LMP_PATH/lib/kokkos/core/src```  into ```include/lammps/KOKKOS/core/src```
 * Copy all the KOKKOS source files from ```$LMP_PATH/lib/kokkos/containers/src``` into ```include/lammps/KOKKOS/containers/src```
-* Copy ```$LMP_PATH/src/fix_external.h``` to ```include/lammps``` as Sampler needs to be derived from a non-abstract Fix class rather than the abstract Fix
+
 
 Build LAMMPS dlext (this package):
 
