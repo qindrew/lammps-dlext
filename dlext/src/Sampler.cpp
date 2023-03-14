@@ -8,32 +8,7 @@ using namespace LAMMPS_NS::dlext;
 using namespace FixConst;
 
 #define SamplerT Sampler<ExternalUpdater, Wrapper, DeviceType>
-/*
-template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
-SamplerT::Sampler(LAMMPS* lmp, int narg, char** arg,
-    ExternalUpdater update, AccessLocation location, AccessMode mode) : FixExternal(lmp, narg, arg),
-    _update_callback { update },
-    _location { location },
-    _mode { mode }
-{ 
-    kokkosable = 1;
-    atomKK = (AtomKokkos *) atom;
 
-    execution_space = ExecutionSpaceFromDevice<DeviceType>::space;
-    
-    datamask_read   = X_MASK | V_MASK | F_MASK | TYPE_MASK | IMAGE_MASK | OMEGA_MASK | MASK_MASK | TORQUE_MASK | ANGMOM_MASK;
-    datamask_modify = X_MASK | V_MASK | F_MASK | OMEGA_MASK | TORQUE_MASK | ANGMOM_MASK;
-}
-
-template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
-int SamplerT::setmask()
-{
-    int mask = 0;
-    mask |= POST_FORCE;
-    mask |= MIN_POST_FORCE;
-    return mask;
-}
-*/
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
 template <typename Callback>
 void SamplerT::forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)

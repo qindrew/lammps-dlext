@@ -42,10 +42,10 @@ inline PyCapsule pyencapsulate(DLManagedTensorPtr tensor, bool autodestruct = tr
 
 template <typename Property>
 struct DEFAULT_VISIBILITY PyUnsafeEncapsulator final {
-    static PyCapsule wrap_property(AccessLocation location, AccessMode mode = kReadWrite
+    static PyCapsule wrap_property(LAMMPS* lmp, AccessLocation location, AccessMode mode = kReadWrite
     )
     {
-        DLManagedTensorPtr tensor = Property::from(location, mode);
+        DLManagedTensorPtr tensor = Property::from(lmp, location, mode);
         return pyencapsulate(tensor);
     }
 };
@@ -55,13 +55,13 @@ struct DEFAULT_VISIBILITY PyUnsafeEncapsulator final {
 
 template <typename Property>
 struct DEFAULT_VISIBILITY PyEncapsulator final {
-    static PyCapsule wrap_property(AccessLocation location, AccessMode mode = kReadWrite
+    static PyCapsule wrap_property(LAMMPS* lmp, AccessLocation location, AccessMode mode = kReadWrite
     )
     {
         // here Property would be Positions, Types, Velocities, NetForces, Tags and Images
         //   that are structs defined in Sampler.h
         //   from() returns a tensor (DLManagedTensorPtr)
-        auto tensor = Property::from(location, mode);
+        auto tensor = Property::from(lmp, location, mode);
 
         // create a capsule from the tensor
         auto capsule = pyencapsulate(tensor, /* autodestruct = */ false);

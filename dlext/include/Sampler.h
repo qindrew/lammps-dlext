@@ -104,11 +104,35 @@ public:
     template <typename Callback>
     void forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n);
 
-    auto get_positions() { return x.data(); }
-    auto get_velocities() { return v.data(); }
-    auto get_net_forces() { return f.data(); }
-    auto get_types() { return type.data(); }
-    auto get_images() { return image.data(); }
+    auto get_positions()
+    {
+        int nlocal = atom->nlocal;
+        return wrap(x.data(), _location, _mode, nlocal, 3);
+    }
+
+    auto get_velocities()
+    {
+        int nlocal = atom->nlocal;
+        return wrap(v.data(), _location, _mode, nlocal, 3);
+    }
+
+    auto get_net_forces()
+    {
+       int nlocal = atom->nlocal;
+       return wrap(f.data(), _location, _mode, nlocal, 3);
+    }
+
+    auto get_type()
+    {
+        int nlocal = atom->nlocal;
+        return wrap(type.data(), _location, _mode, nlocal, 1);
+    }
+
+    auto get_tag()
+    {
+        int nlocal = atom->nlocal;
+        return wrap(tag.data(), _location, _mode, nlocal, 1);
+    }
 
     DLDevice dldevice(bool gpu_flag);
 
@@ -120,6 +144,7 @@ private:
     ExternalUpdater _update_callback;
     AccessLocation _location;
     AccessMode _mode;
+    int _nlocal;
 
     // the ArrayTypes namespace and its structs (t_x_array, t_v_array and so on) are defined in kokkos_type.h
     typename ArrayTypes<DeviceType>::t_x_array x;
@@ -135,21 +160,17 @@ private:
     typename ArrayTypes<DeviceType>::t_imageint_1d image;
 };
 
-
-// the following structs provide a way to return the pointer to the corresponding atom property
-//   used in PyDLExt.h and lammps_dlext.cc
 /*
 struct Positions final {
-    static DLManagedTensorPtr from(const AccessLocation location, AccessMode mode)
+    static DLManagedTensorPtr from(AccessLocation location, AccessMode mode)
     {
-        
+       
         return wrap(x, location, mode, 3);
     }
 };
 
 struct Types final {
-    static DLManagedTensorPtr from(auto 
-        const AccessLocation location, AccessMode mode
+    static DLManagedTensorPtr from(AccessLocation location, AccessMode mode
     )
     {
         return wrap(sampler.get_types(), location, mode, 1);
@@ -158,7 +179,7 @@ struct Types final {
 
 struct Velocities final {
     static DLManagedTensorPtr from(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler,
-        const AccessLocation location, AccessMode mode
+        AccessLocation location, AccessMode mode
     )
     {
         return wrap(sampler.get_velocities(), location, mode, 3);
@@ -167,7 +188,7 @@ struct Velocities final {
 
 struct NetForces final {
     static DLManagedTensorPtr from(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler,
-        const AccessLocation location, AccessMode mode
+        AccessLocation location, AccessMode mode
     )
     {
         return wrap(sampler.get_net_forces(), location, mode, 3);
