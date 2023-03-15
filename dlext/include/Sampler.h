@@ -102,7 +102,42 @@ public:
     //! and access `mode`. NOTE: Forces are always passed in readwrite mode.
 
     template <typename Callback>
-    void forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n);
+    void forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
+    {
+        atomKK->sync(execution_space,datamask_read);
+
+        x = atomKK->k_x.template view<DeviceType>();
+        v = atomKK->k_v.template view<DeviceType>();
+        f = atomKK->k_f.template view<DeviceType>();
+        type = atomKK->k_type.template view<DeviceType>();
+        image = atomKK->k_image.template view<DeviceType>();
+        tag = atomKK->k_tag.template view<DeviceType>();
+
+        if (atomKK->omega_flag)
+            omega  = atomKK->k_omega.template view<DeviceType>();
+
+        if (atomKK->angmom_flag)
+            angmom = atomKK->k_angmom.template view<DeviceType>();
+
+        if (atomKK->torque_flag)
+            torque = atomKK->k_torque.template view<DeviceType>();
+
+        // wrap these KOKKOS arrays into DLManagedTensor to pass to callback
+
+        int nlocal = atom->nlocal;
+
+        int offset = 0;
+        auto pos_capsule = wrap(x.data(), location, mode, nlocal, 3);
+        auto vel_capsule = wrap(v.data(), location, mode, nlocal, 3);
+        auto type_capsule = wrap(type.data(), location, mode, nlocal, 1);
+        auto tag_capsule = wrap(tag.data(), location, mode, nlocal, 1);
+        auto force_capsule = wrap(f.data(), location, mode, nlocal, 3);
+
+        // callback will be responsible for advancing the simulation for n steps
+
+    //    callback(pos_capsule, vel_capsule, rtags_capsule, img_capsule, force_capsule, n);
+    
+    }
 
     auto get_positions()
     {
@@ -162,9 +197,10 @@ private:
 
 /*
 struct Positions final {
-    static DLManagedTensorPtr from(AccessLocation location, AccessMode mode)
+    static DLManagedTensorPtr from(LAMMPS* lmp, AccessLocation location, AccessMode mode)
     {
        
+       atomKK->sync(execution_space,datamask_read);
         return wrap(x, location, mode, 3);
     }
 };

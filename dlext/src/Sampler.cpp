@@ -8,7 +8,7 @@ using namespace LAMMPS_NS::dlext;
 using namespace FixConst;
 
 #define SamplerT Sampler<ExternalUpdater, Wrapper, DeviceType>
-
+/*
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
 template <typename Callback>
 void SamplerT::forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
@@ -47,7 +47,7 @@ void SamplerT::forward_data(Callback callback, AccessLocation location, AccessMo
 //    callback(pos_capsule, vel_capsule, rtags_capsule, img_capsule, force_capsule, n);
     
 }
-
+*/
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
 inline DLDevice SamplerT::dldevice(bool gpu_flag)
 {

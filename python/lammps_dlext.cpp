@@ -23,7 +23,8 @@ void export_PySampler(py::module m)
           int narg = cstrs.size();
           return (new Sampler<PyFunction, PyEncapsulator, LMPDeviceType>(lmp, narg, cstrs.data(), function, location, mode));
         }))
-        .def("get_positions", &PySampler::get_positions);
+        .def("forward_data", &PySampler::forward_data<PyFunction>);
+        //.def("get_positions", &PySampler::get_positions);
         //.def("get_velocities", &PySampler::get_velocities)
         //.def("get_net_forces", &PySampler::get_net_forces)
         //.def("get_types", &PySampler::get_types)
@@ -54,7 +55,7 @@ PYBIND11_MODULE(dlpack_extension, m)
     //       Positions, Types, Velocities, NetForces, Tags and Images are structs defined in Sampler.h
     // TODO: PyEncapsulator should be aware of DLExtSampler
 /*
-    m.def("positions",  &PyEncapsulator<Positions>::wrap_property);
+    m.def("get_positions",  &PyEncapsulator<Positions>::wrap_property);    
     m.def("types",      &PyEncapsulator<Types>::wrap_property);
     m.def("velocities", &PyEncapsulator<Velocities>::wrap_property);
     m.def("net_forces", &PyEncapsulator<NetForces>::wrap_property);
