@@ -52,7 +52,7 @@ Build LAMMPS dlext (this package):
 ```
   mkdir build && cd build
 
-  cmake ../ -DCMAKE_INSTALL_PATH="`python3 -c "import site; print(site.getsitepackages()[0])"`/lammps"
+  cmake ../ -DCMAKE_INSTALL_PREFIX="`python3 -c "import site; print(site.getsitepackages()[0])"`/lammps"
 ```
 * TODO: Add to the include path in CMakeLists.txt the KOKKOS header files under ```lib/kokkos/core/src```
 
