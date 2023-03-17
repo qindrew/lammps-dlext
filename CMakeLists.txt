@@ -41,7 +41,7 @@ message(STATUS "Install plugin to: " ${CMAKE_INSTALL_PREFIX})
 # Create the main library
 add_library(${PROJECT_NAME} SHARED "")
 
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_11)
+target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_14)
 target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME} PUBLIC ${LAMMPS_LIBRARIES} dlpack::dlpack)
 
