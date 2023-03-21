@@ -7,6 +7,7 @@ Provide access to [LAMMPS](https://www.lammps.org) simulation data on CPU or GPU
 Install upstream LAMMPS
 * Activate the `pysages3` virtual environment
 ```
+  module load python/anaconda-2021.05 openmpi/4.1.2+gcc-7.4.0 cuda/11.2 cmake/3.19
   source activate pysages3
 ```
 * Configure LAMMPS with KOKKOS and PYTHON packages, and install LAMMPS to the same location as the `pysages` virtual environment
