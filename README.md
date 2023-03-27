@@ -39,7 +39,6 @@ python3 -c "from lammps import lammps; p = lammps()"
 ```
 
 The following steps are needed to compile `lammpds-dlext` because the header files are not copied into the LAMMPS installation folder:
-* Copy KOKKOS-generated header files from ```build/lib/kokkos/KokkosCore_*.hpp``` and ```build/lib/kokkos/KokkosCore_config.h```  into ```include/lammps/KOKKOS```
 * Copy the folder ```$LMP_PATH/src/fmt``` into the installation folder ```include/lammps/fmt```
 * Copy ```$LMP_PATH/src/fix_external.h``` to ```include/lammps``` as Sampler needs to be derived from a non-abstract Fix class rather than the abstract Fix
 * Copy several key headers from ```$LMP_PATH/src/KOKKOS``` (e.g. kokkos_type.h, atom_kokkos.h, memory_kokkos.h, comm_kokkos.h) into ```include/lammps/KOKKOS```
