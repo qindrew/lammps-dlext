@@ -72,44 +72,45 @@ if (NOT LAMMPS_FOUND)
 endif (NOT LAMMPS_FOUND)
 
 # search for the KOKKOS include directory
-find_path(KOKKOS_INCLUDE_DIR
-          NAMES Kokkos_Core.hpp
-          HINTS ${CMAKE_PREFIX_PATH}/include/lammps/KOKKOS/core/src
-          HINTS ${LAMMPS_ROOT}/../../../../include/lammps/KOKKOS/core/src
-          )
+#find_path(KOKKOS_INCLUDE_DIR
+#          NAMES Kokkos_Core.hpp
+#          HINTS ${CMAKE_PREFIX_PATH}/include/lammps/KOKKOS/core/src
+#          HINTS ${LAMMPS_ROOT}/../../../../include/lammps/KOKKOS/core/src
+#          )
 
-if (KOKKOS_INCLUDE_DIR)
-    message(STATUS "Found KOKKOS include directory at: ${KOKKOS_INCLUDE_DIR}")
-    mark_as_advanced(KOKKOS_INCLUDE_DIR)
-else(KOKKOS_INCLUDE_DIR)
-    message(STATUS "Cannot find KOKKOS include directory at ${CMAKE_PREFIX_PATH}/include/lammps/KOKKOS/core/src")
-endif (KOKKOS_INCLUDE_DIR)
+#if (KOKKOS_INCLUDE_DIR)
+#    message(STATUS "Found KOKKOS include directory at: ${KOKKOS_INCLUDE_DIR}")
+#    mark_as_advanced(KOKKOS_INCLUDE_DIR)
+#else(KOKKOS_INCLUDE_DIR)
+#    message(STATUS "Cannot find KOKKOS include directory at ${CMAKE_PREFIX_PATH}/include/lammps/KOKKOS/core/src")
+#endif (KOKKOS_INCLUDE_DIR)
 
-set(KOKKOS_FOUND FALSE)
-if (KOKKOS_INCLUDE_DIR AND LAMMPS_ROOT)
-    set(KOKKOS_FOUND TRUE)
-    mark_as_advanced(KOKKOS_INCLUDE_DIR)
-endif (KOKKOS_INCLUDE_DIR AND LAMMPS_ROOT)
+#set(KOKKOS_FOUND FALSE)
+#if (KOKKOS_INCLUDE_DIR AND LAMMPS_ROOT)
+#    set(KOKKOS_FOUND TRUE)
+#    mark_as_advanced(KOKKOS_INCLUDE_DIR)
+#endif (KOKKOS_INCLUDE_DIR AND LAMMPS_ROOT)
 
-if (NOT KOKKOS_FOUND)
-    message(SEND_ERROR "KOKKOS Not found. Please specify the location of your KOKKOS installation in KOKKOS_INCLUDE_DIR")
-endif (NOT KOKKOS_FOUND)
+#if (NOT KOKKOS_FOUND)
+#    message(SEND_ERROR "KOKKOS Not found. Please specify the location of your KOKKOS installation in KOKKOS_INCLUDE_DIR")
+#endif (NOT KOKKOS_FOUND)
 
 
 #############################################################
 ## Now that we've found lammps and KOKKOS, lets do some setup
-if (LAMMPS_FOUND AND KOKKOS_FOUND)
+#if (LAMMPS_FOUND AND KOKKOS_FOUND)
+if (LAMMPS_FOUND)
 
 include_directories(${LAMMPS_INCLUDE_DIR})
-include_directories(${KOKKOS_INCLUDE_DIR})
-include_directories(${KOKKOS_INCLUDE_DIR}/../..)
-include_directories(${KOKKOS_INCLUDE_DIR}/../../containers/src)
+#include_directories(${KOKKOS_INCLUDE_DIR})
+#include_directories(${KOKKOS_INCLUDE_DIR}/../..)
+#include_directories(${KOKKOS_INCLUDE_DIR}/../../containers/src)
 
 
 # run all of LAMMPS's generic lib setup scripts
 set(CMAKE_MODULE_PATH ${LAMMPS_ROOT}
                       ${LAMMPS_ROOT}/../../../../lib64/cmake/LAMMPS
-                      ${LAMMPS_ROOT}/../../../../lib64/cmake/Kokkos
+#                      ${LAMMPS_ROOT}/../../../../lib64/cmake/Kokkos
                       ${CMAKE_MODULE_PATH}
                       )
 #message(STATUS "current module path " ${CMAKE_MODULE_PATH})
@@ -151,4 +152,5 @@ set(LAMMPS_LIB ${LAMMPS_ROOT}/../../../../lib64/liblammps.so)
 
 set(LAMMPS_LIBRARIES ${LAMMPS_LIB} ${LAMMPS_COMMON_LIBS})
 
-endif (LAMMPS_FOUND AND KOKKOS_FOUND)
+endif (LAMMPS_FOUND)
+#endif (LAMMPS_FOUND AND KOKKOS_FOUND)

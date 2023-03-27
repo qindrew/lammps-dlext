@@ -2,13 +2,13 @@
 // This file is part of `lammps-dlext`, see LICENSE.md
 
 #include "Sampler.h"
-
+/*
 using namespace LAMMPS_NS;
 using namespace LAMMPS_NS::dlext;
 using namespace FixConst;
 
-#define SamplerT Sampler<ExternalUpdater, Wrapper, DeviceType>
-/*
+#define SamplerT Sampler<ExternalUpdater, DeviceType>
+
 template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
 template <typename Callback>
 void SamplerT::forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
@@ -48,14 +48,15 @@ void SamplerT::forward_data(Callback callback, AccessLocation location, AccessMo
     
 }
 */
-template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
+/*
+template <typename ExternalUpdater, class DeviceType>
 inline DLDevice SamplerT::dldevice(bool gpu_flag)
 {
     int gpu_id = 0;
     auto device_id = gpu_id; // be careful here 
     return DLDevice { gpu_flag ? kDLCUDA : kDLCPU, device_id };
 }
-
+*/
 /*
   wrap is called by Sampler::forward_data()
   data : a generic pointer to an atom property (x, v, f)
@@ -63,11 +64,11 @@ inline DLDevice SamplerT::dldevice(bool gpu_flag)
   mode
   num particles,
 */
-template <typename ExternalUpdater, template <typename> class Wrapper, class DeviceType>
+/*
+template <typename ExternalUpdater, class DeviceType>
 template <typename T>
 DLManagedTensorPtr SamplerT::wrap(const T* data, const AccessLocation location, const AccessMode mode,
-                                  const int num_particles, int64_t size2 /*=1*/,
-                                  uint64_t offset /*= 0*/, uint64_t stride1_offset /*= 0*/)
+                                  const int num_particles, int64_t size2, uint64_t offset, uint64_t stride1_offset)
 {
     assert((size2 >= 1));
 
@@ -110,5 +111,5 @@ DLManagedTensorPtr SamplerT::wrap(const T* data, const AccessLocation location, 
 
     return &(bridge.release()->tensor);
 }
-
+*/
 

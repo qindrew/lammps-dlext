@@ -12,7 +12,7 @@ using namespace LAMMPS_NS::dlext;
 void export_PySampler(py::module m)
 {
     using PyFunction = py::function;
-    using PySampler = Sampler<PyFunction, PyEncapsulator, LMPDeviceType>;
+    using PySampler = Sampler<PyFunction, LMPDeviceType>;
     using PySamplerSPtr = std::shared_ptr<PySampler>;
 
     py::class_<PySampler>(m, "DLExtSampler")
@@ -21,7 +21,7 @@ void export_PySampler(py::module m)
           cstrs.reserve(args.size());
           for (auto &s : args) cstrs.push_back(&s[0]);
           int narg = cstrs.size();
-          return (new Sampler<PyFunction, PyEncapsulator, LMPDeviceType>(lmp, narg, cstrs.data(), function, location, mode));
+          return (new Sampler<PyFunction, LMPDeviceType>(lmp, narg, cstrs.data(), function, location, mode));
         }))
         .def("forward_data", &PySampler::forward_data<PyFunction>);
         //.def("get_positions", &PySampler::get_positions);

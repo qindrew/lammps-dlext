@@ -10,7 +10,7 @@ Install upstream LAMMPS
   module load python/anaconda-2021.05 openmpi/4.1.2+gcc-7.4.0 cuda/11.2 cmake/3.19
   source activate pysages3
 ```
-* Configure LAMMPS with KOKKOS and PYTHON packages, and install LAMMPS to the same location as the `pysages` virtual environment
+* Configure LAMMPS with KOKKOS and PYTHON packages, and install LAMMPS to the same location as the `pysages3` virtual environment
 ```
    git clone https://github.com/lammps/lammps.git
    cd lammps
@@ -43,8 +43,6 @@ The following steps are needed to compile `lammpds-dlext` because the header fil
 * Copy the folder ```$LMP_PATH/src/fmt``` into the installation folder ```include/lammps/fmt```
 * Copy ```$LMP_PATH/src/fix_external.h``` to ```include/lammps``` as Sampler needs to be derived from a non-abstract Fix class rather than the abstract Fix
 * Copy several key headers from ```$LMP_PATH/src/KOKKOS``` (e.g. kokkos_type.h, atom_kokkos.h, memory_kokkos.h, comm_kokkos.h) into ```include/lammps/KOKKOS```
-* Copy all the KOKKOS source files from ```$LMP_PATH/lib/kokkos/core/src```  into ```include/lammps/KOKKOS/core/src```
-* Copy all the KOKKOS source files from ```$LMP_PATH/lib/kokkos/containers/src``` into ```include/lammps/KOKKOS/containers/src```
 
 
 Build LAMMPS dlext (this package):
@@ -53,7 +51,7 @@ Build LAMMPS dlext (this package):
 ```
   mkdir build && cd build
 
-  cmake ../ -DCMAKE_INSTALL_PREFIX="`python3 -c "import site; print(site.getsitepackages()[0])"`/lammps"
+  cmake ../ -DCMAKE_INSTALL_PREFIX="`python3 -c "import site; print(site.getsitepackages()[0])"`/lammps" \
+                     -DKokkos_ROOT="`python3 -c "import site; print(site.getsitepackages()[0])"`/../../../lib64/cmake/Kokkos"
 ```
-* TODO: Add to the include path in CMakeLists.txt the KOKKOS header files under ```lib/kokkos/core/src```
 

@@ -6,9 +6,10 @@
 
 #include "DLExt.h"
 #include "KOKKOS/kokkos_type.h"
-#include "atom_kokkos.h"
+#include "KOKKOS/atom_kokkos.h"
 #include "atom_masks.h"
 #include "fix_external.h"
+#include "update.h"
 
 namespace LAMMPS_NS
 {

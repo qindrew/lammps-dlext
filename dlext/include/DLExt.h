@@ -7,7 +7,7 @@
 #include "cxx11utils.h"
 #include "dlpack/dlpack.h"
 #include "lammps.h"
-#include "kokkos_type.h"
+#include "KOKKOS/kokkos_type.h"
 
 #include <type_traits>
 #include <vector>
