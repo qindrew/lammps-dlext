@@ -7,45 +7,44 @@
 
 namespace py = pybind11;
 using namespace LAMMPS_NS;
-using namespace LAMMPS_NS::dlext;
 
 void export_PySampler(py::module m)
 {
     using PyFunction = py::function;
-    using PySampler = Sampler<PyFunction, LMPDeviceType>;
+    using PySampler = LAMMPS_NS::dlext::Sampler<PyFunction, LMPDeviceType>;
     using PySamplerSPtr = std::shared_ptr<PySampler>;
 
     py::class_<PySampler>(m, "DLExtSampler")
-        .def(py::init([](LAMMPS* lmp, std::vector<std::string> args, PyFunction function, AccessLocation location, AccessMode mode) {
+        .def(py::init([](LAMMPS* lmp, std::vector<std::string> args, PyFunction function, LAMMPS_NS::dlext::AccessLocation location, LAMMPS_NS::dlext::AccessMode mode) {
           std::vector<char *> cstrs;
           cstrs.reserve(args.size());
           for (auto &s : args) cstrs.push_back(&s[0]);
           int narg = cstrs.size();
-          return (new Sampler<PyFunction, LMPDeviceType>(lmp, narg, cstrs.data(), function, location, mode));
-        }))
-        .def("forward_data", &PySampler::forward_data<PyFunction>);
+          return (new LAMMPS_NS::dlext::Sampler<PyFunction, LMPDeviceType>(lmp, narg, cstrs.data(), function, location, mode));
+        }));
+        //.def("forward_data", &PySampler::forward_data<PyFunction>);
         //.def("get_positions", &PySampler::get_positions);
         //.def("get_velocities", &PySampler::get_velocities)
         //.def("get_net_forces", &PySampler::get_net_forces)
         //.def("get_types", &PySampler::get_types)
         //.def("get_images", &PySampler::get_images);
-        
+    
 }
 
 PYBIND11_MODULE(dlpack_extension, m)
 {
     // Enums
-    py::enum_<AccessLocation>(m, "AccessLocation")
-        .value("OnDevice", kOnDevice)
+    py::enum_<LAMMPS_NS::dlext::AccessLocation>(m, "AccessLocation")
+        .value("OnDevice", LAMMPS_NS::dlext::kOnDevice)
 #ifdef KOKKOS_ENABLE_CUDA
-        .value("OnHost", kOnHost)
+        .value("OnHost", LAMMPS_NS::dlext::kOnHost)
 #endif
         ;
 
-    py::enum_<AccessMode>(m, "AccessMode")
-        .value("Read", kRead)
-        .value("ReadWrite", kReadWrite)
-        .value("Overwrite", kOverwrite);
+    py::enum_<LAMMPS_NS::dlext::AccessMode>(m, "AccessMode")
+        .value("Read", LAMMPS_NS::dlext::kRead)
+        .value("ReadWrite", LAMMPS_NS::dlext::kReadWrite)
+        .value("Overwrite", LAMMPS_NS::dlext::kOverwrite);
 
     // Classes
     export_PySampler(m);

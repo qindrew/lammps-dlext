@@ -124,7 +124,6 @@ public:
 
         int nlocal = atom->nlocal;
 
-        int offset = 0;
         auto pos_capsule = wrap(x.data(), location, mode, nlocal, 3);
         auto vel_capsule = wrap(v.data(), location, mode, nlocal, 3);
         auto type_capsule = wrap(type.data(), location, mode, nlocal, 1);
