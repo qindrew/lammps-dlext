@@ -75,11 +75,11 @@ function(_pybind11_add_lto_flags target_name prefer_thin_lto)
           PYBIND11_LTO_CXX_FLAGS PYBIND11_LTO_LINKER_FLAGS)
       endif()
 
-      if (NOT HAS_FLTO_THIN)
-        _pybind11_return_if_cxx_and_linker_flags_work(HAS_FLTO
-          "-flto${cxx_append}" "-flto${linker_append}"
-          PYBIND11_LTO_CXX_FLAGS PYBIND11_LTO_LINKER_FLAGS)
-      endif()
+      #if (NOT HAS_FLTO_THIN)
+      #  _pybind11_return_if_cxx_and_linker_flags_work(HAS_FLTO
+      #    "-flto${cxx_append}" "-flto${linker_append}"
+      #    PYBIND11_LTO_CXX_FLAGS PYBIND11_LTO_LINKER_FLAGS)
+      #endif()
     elseif (CMAKE_CXX_COMPILER_ID MATCHES "Intel")
       # Intel equivalent to LTO is called IPO
       _pybind11_return_if_cxx_and_linker_flags_work(HAS_INTEL_IPO
