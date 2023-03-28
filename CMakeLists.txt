@@ -13,10 +13,6 @@ find_package(LAMMPS REQUIRED)
 # find Kokkos package
 find_package(Kokkos REQUIRED)
 
-if(NOT LAMMPS_FOUND)
-    find_package(LAMMPS REQUIRED)
-endif()
-
 if(NOT LAMMPS_INSTALL_PREFIX)
     set(LAMMPS_INSTALL_PREFIX ${LAMMPS_ROOT})
 endif()

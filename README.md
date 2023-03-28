@@ -43,14 +43,14 @@ The following steps are needed to compile `lammpds-dlext` because the header fil
 * Copy ```$LMP_PATH/src/fix_external.h``` to ```include/lammps``` as Sampler needs to be derived from a non-abstract Fix class rather than the abstract Fix
 * Copy several key headers from ```$LMP_PATH/src/KOKKOS``` (e.g. kokkos_type.h, atom_kokkos.h, memory_kokkos.h, comm_kokkos.h) into ```include/lammps/KOKKOS```
 
-
 Build LAMMPS dlext (this package):
 
 * Set the same install path as the LAMMPS python module (see above):
 ```
   mkdir build && cd build
 
-  cmake ../ -DCMAKE_INSTALL_PREFIX="`python3 -c "import site; print(site.getsitepackages()[0])"`/lammps" \
-                     -DKokkos_ROOT="`python3 -c "import site; print(site.getsitepackages()[0])"`/../../../lib64/cmake/Kokkos"
+  export SITE_PACKAGES=`python3 -c "import site; print(site.getsitepackages()[0])"`
+  cmake ../ -DCMAKE_INSTALL_PREFIX="$SITE_PACKAGES/lammps" -DKokkos_ROOT="$SITE_PACKAGES/../../../lib64/cmake/Kokkos"
 ```
 
+The path to `Kokkos_ROOT` is needed to compile with [the KOKKOS package out of tree] (https://github.com/kokkos/kokkos/wiki/Compiling).
