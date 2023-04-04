@@ -43,7 +43,15 @@ The following steps are needed to compile `lammpds-dlext` because the header fil
 * Copy ```$LMP_PATH/src/fix_external.h``` to ```include/lammps``` as Sampler needs to be derived from a non-abstract Fix class rather than the abstract Fix
 * Copy several key headers from ```$LMP_PATH/src/KOKKOS``` (e.g. kokkos_type.h, atom_kokkos.h, memory_kokkos.h, comm_kokkos.h) into ```include/lammps/KOKKOS```
 
-Build LAMMPS dlext (this package):
+You can check if `lammps` is listed in the `pysages3` env via `pip list`.
+
+Build LAMMPS dlext (this package)
+
+* Since the package is under development, it is reasonable to create a new virtual env cloned from `pysages3`
+```
+  conda create --clone pysages3 --prefix=/path/to/pysages3-dev
+  source activate /path/to/pysages3-dev
+```
 
 * Set the same install path as the LAMMPS python module (see above):
 ```
@@ -51,6 +59,17 @@ Build LAMMPS dlext (this package):
 
   export SITE_PACKAGES=`python3 -c "import site; print(site.getsitepackages()[0])"`
   cmake ../ -DCMAKE_INSTALL_PREFIX="$SITE_PACKAGES/lammps" -DKokkos_ROOT="$SITE_PACKAGES/../../../lib64/cmake/Kokkos"
+  make -j4
+  make install
 ```
 
 The path to `Kokkos_ROOT` is needed to compile with [the KOKKOS package out of tree] (https://github.com/kokkos/kokkos/wiki/Compiling).
+
+If the build is successful, you will see the `dlext` module installed inside the `lammps` package.
+
+NOTE: We need to append `LD_LIBRARAY_PATH` with the path to `libdlext.so` before testing the LAMMPS backend:
+
+```
+export SITE_PACKAGES=`python3 -c "import site; print(site.getsitepackages()[0])"`
+export LD_LIBRARY_PATH=$SITE_PACKAGES/lammps:$LD_LIBRARY_PATH
+```
