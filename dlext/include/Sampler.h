@@ -99,7 +99,7 @@ public:
     //! The data for the particles information is requested at the given `location`
     //! and access `mode`. NOTE: Forces are always passed in readwrite mode.
     template <typename Callback>
-    void forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
+    void forward_data(Callback callback, LAMMPS_NS::dlext::AccessLocation location, LAMMPS_NS::dlext::AccessMode mode, TimeStep n)
     {
         atomKK->sync(execution_space, datamask_read);
 
@@ -124,11 +124,11 @@ public:
 
         int nlocal = atom->nlocal;
 
-        auto pos_capsule = wrap(x.data(), location, mode, nlocal, 3);
-        auto vel_capsule = wrap(v.data(), location, mode, nlocal, 3);
-        auto type_capsule = wrap(type.data(), location, mode, nlocal, 1);
-        auto tag_capsule = wrap(tag.data(), location, mode, nlocal, 1);
-        auto force_capsule = wrap(f.data(), location, mode, nlocal, 3);
+        auto pos_capsule = wrap<Scalar3>(x.data(), location, mode, nlocal, 3);
+        auto vel_capsule = wrap<Scalar3>(v.data(), location, mode, nlocal, 3);
+        auto type_capsule = wrap<int>(type.data(), location, mode, nlocal, 1);
+        auto tag_capsule = wrap<tagint>(tag.data(), location, mode, nlocal, 1);
+        auto force_capsule = wrap<Scalar3>(f.data(), location, mode, nlocal, 3);
 
         // callback might require the info of the simulation timestep `n`
         // callback(pos_capsule, vel_capsule, rtags_capsule, img_capsule, force_capsule, n);
@@ -144,38 +144,38 @@ public:
     auto get_positions()
     {
         int nlocal = atom->nlocal;
-        return wrap(x.data(), _location, _mode, nlocal, 3);
+        return wrap<Scalar3>(x.data(), _location, _mode, nlocal, 3);
     }
 
     auto get_velocities()
     {
         int nlocal = atom->nlocal;
-        return wrap(v.data(), _location, _mode, nlocal, 3);
+        return wrap<Scalar3>(v.data(), _location, _mode, nlocal, 3);
     }
 
     auto get_net_forces()
     {
         int nlocal = atom->nlocal;
-        return wrap(f.data(), _location, _mode, nlocal, 3);
+        return wrap<Scalar3>(f.data(), _location, _mode, nlocal, 3);
     }
 
     auto get_type()
     {
         int nlocal = atom->nlocal;
-        return wrap(type.data(), _location, _mode, nlocal, 1);
+        return wrap<int>(type.data(), _location, _mode, nlocal, 1);
     }
 
     auto get_tag()
     {
         int nlocal = atom->nlocal;
-        return wrap(tag.data(), _location, _mode, nlocal, 1);
+        return wrap<tagint>(tag.data(), _location, _mode, nlocal, 1);
     }
 
     DLDevice dldevice(bool gpu_flag);
 
     template <typename T>
     DLManagedTensorPtr wrap(
-        const T* data, const AccessLocation location, const AccessMode mode,
+        void* data, const LAMMPS_NS::dlext::AccessLocation location, const LAMMPS_NS::dlext::AccessMode mode,
         const int num_particles, int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0
     );
 
@@ -194,7 +194,7 @@ private:
     typename ArrayTypes<DeviceType>::t_v_array angmom;
     typename ArrayTypes<DeviceType>::t_f_array torque;
     typename ArrayTypes<DeviceType>::t_float_1d mass;
-    typename ArrayTypes<DeviceType>::t_int_1d_randomread type;
+    typename ArrayTypes<DeviceType>::t_int_1d type;
     typename ArrayTypes<DeviceType>::t_int_1d mask;
     typename ArrayTypes<DeviceType>::t_tagint_1d tag;
     typename ArrayTypes<DeviceType>::t_imageint_1d image;
