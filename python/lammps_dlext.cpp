@@ -2,7 +2,7 @@
 // This file is part of `lammps-dlext`, see LICENSE.md
 
 #include "PyDLExt.h"
-#include "Sampler.h"
+//#include "Sampler.h"
 #include <pybind11/stl.h>
 
 namespace py = pybind11;

@@ -52,7 +52,7 @@ void SamplerT::forward_data(Callback callback, AccessLocation location, AccessMo
     
 }
 */
-
+/*
 template <typename ExternalUpdater, class DeviceType>
 inline DLDevice SamplerT::dldevice(bool gpu_flag)
 {
@@ -60,7 +60,7 @@ inline DLDevice SamplerT::dldevice(bool gpu_flag)
     auto device_id = gpu_id; // be careful here 
     return DLDevice { gpu_flag ? kDLCUDA : kDLCPU, device_id };
 }
-
+*/
 /*
   wrap is called by Sampler::forward_data()
   data : a generic pointer to an atom property (x, v, f)
@@ -68,7 +68,7 @@ inline DLDevice SamplerT::dldevice(bool gpu_flag)
   mode
   num particles,
 */
-
+/*
 template <typename ExternalUpdater, class DeviceType>
 template <typename T>
 DLManagedTensorPtr SamplerT::wrap(void* data, const AccessLocation location, const AccessMode mode,
@@ -115,7 +115,7 @@ DLManagedTensorPtr SamplerT::wrap(void* data, const AccessLocation location, con
 
     return &(bridge.release()->tensor);
 }
-
+*/
 } // namespace dlext
 
 } // namespace LAMMPS_NS

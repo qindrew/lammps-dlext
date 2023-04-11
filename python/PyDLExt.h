@@ -20,6 +20,8 @@ const char* const kUsedDLTensorCapsuleName = "used_dltensor";
 
 static std::vector<PyTensorBundle> kPyCapsulesPool;
 
+void do_not_delete(DLManagedTensorPtr tensor) { }
+
 inline PyCapsule pyencapsulate(DLManagedTensorPtr tensor, bool autodestruct = true)
 {
     auto capsule = PyCapsule(tensor, kDLTensorCapsuleName, nullptr);

@@ -77,7 +77,7 @@ void delete_bridge(DLManagedTensorPtr tensor)
         delete static_cast<DLDataBridge<T>*>(tensor->manager_ctx);
 }
 
-void do_not_delete(DLManagedTensorPtr tensor) { }
+//void do_not_delete(DLManagedTensorPtr tensor) { }
 
 typedef double Scalar;
 struct Scalar3 { Scalar x, y, z; };

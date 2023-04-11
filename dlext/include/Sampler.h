@@ -171,13 +171,64 @@ public:
         return wrap<tagint>(tag.data(), _location, _mode, nlocal, 1);
     }
 
-    DLDevice dldevice(bool gpu_flag);
+    DLDevice dldevice(bool gpu_flag)
+    {
+        int gpu_id = 0;
+        auto device_id = gpu_id; // be careful here 
+        return DLDevice { gpu_flag ? kDLCUDA : kDLCPU, device_id };
+    }
+
 
     template <typename T>
     DLManagedTensorPtr wrap(
         void* data, const LAMMPS_NS::dlext::AccessLocation location, const LAMMPS_NS::dlext::AccessMode mode,
         const int num_particles, int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0
-    );
+    )
+    {
+        assert((size2 >= 1));
+
+        #ifdef KOKKOS_ENABLE_CUDA
+        bool gpu_flag = (location == kOnDevice);
+        #else
+        bool gpu_flag = false;
+        #endif
+/*
+        //auto location = gpu_flag ? kOnDevice : kOnHost;
+        //auto handle = cxx11utils::make_unique<T>(data, location, mode);
+        //auto bridge = cxx11utils::make_unique<DLDataBridge<T>>(handle);
+        
+        //bridge->tensor.manager_ctx = bridge.get();
+        bridge->tensor.deleter = delete_bridge<T>;
+
+        auto& dltensor = bridge->tensor.dl_tensor;
+        // cast handle->data to void* -- no need
+        //dltensor.data = opaque(bridge->handle->data);
+        dltensor.device = dldevice(gpu_flag);
+        // dtype()
+        dltensor.dtype = dtype<T>();
+
+        auto& shape = bridge->shape;
+        // first be the number of particles
+        shape.push_back(num_particles);
+        if (size2 > 1)
+        shape.push_back(size2);
+        // from one particle datum to the next one
+        auto& strides = bridge->strides;
+        strides.push_back(stride1<T>() + stride1_offset);
+        if (size2 > 1)
+            strides.push_back(1);
+
+        dltensor.ndim = shape.size(); // 1 or 2 dims
+        dltensor.shape = reinterpret_cast<std::int64_t*>(shape.data());
+        dltensor.strides = reinterpret_cast<std::int64_t*>(strides.data());
+        // offset for the beginning pointer
+        dltensor.byte_offset = offset;
+
+        return &(bridge.release()->tensor);
+
+*/
+    }
+    
 
 private:
     ExternalUpdater _update_callback;
