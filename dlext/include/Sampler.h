@@ -5,8 +5,8 @@
 #define DLEXT_SAMPLER_H_
 
 #include "DLExt.h"
-#include "KOKKOS/kokkos_type.h"
 #include "KOKKOS/atom_kokkos.h"
+#include "KOKKOS/kokkos_type.h"
 #include "atom_masks.h"
 #include "fix_external.h"
 #include "update.h"
@@ -99,26 +99,36 @@ public:
     //! The data for the particles information is requested at the given `location`
     //! and access `mode`. NOTE: Forces are always passed in readwrite mode.
     template <typename Callback>
-    void forward_data(Callback callback, LAMMPS_NS::dlext::AccessLocation location, LAMMPS_NS::dlext::AccessMode mode, TimeStep n)
+    void forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
     {
+        if (location == kOnHost) {
+            _forward_data<LMPHostType>(callback, location, mode, n);
+        } else {
+            _forward_data<LMPDeviceType>(callback, location, mode, n);
+        }
+    }
+
+    template <typename RequestedLocation, typename Callback>
+    void _forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
+    {
+        // TODO:
+        // 1. Instead of datamask_read we should choose based on the AccessMode
+        // 2. Check if execution_space should match the DeviceType or Location here
         atomKK->sync(execution_space, datamask_read);
 
-        // TODO: the DeviceType here shouldn't be the same as the class' DeviceType
-        // we need a way to translate the runtime `location` to a request for the
-        // data on the host or the device
-        x = (atomKK->k_x).view<DeviceType>();
-        v = (atomKK->k_v).view<DeviceType>();
-        f = (atomKK->k_f).view<DeviceType>();
-        type = (atomKK->k_type).view<DeviceType>();
-        image = (atomKK->k_image).view<DeviceType>();
-        tag = (atomKK->k_tag).view<DeviceType>();
+        auto x = (atomKK->k_x).view<RequestedLocation>();
+        auto v = (atomKK->k_v).view<RequestedLocation>();
+        auto f = (atomKK->k_f).view<RequestedLocation>();
+        auto type = (atomKK->k_type).view<RequestedLocation>();
+        auto image = (atomKK->k_image).view<RequestedLocation>();
+        auto tag = (atomKK->k_tag).view<RequestedLocation>();
 
         if (atomKK->omega_flag)
-            omega = (atomKK->k_omega).view<DeviceType>();
+            omega = (atomKK->k_omega).view<RequestedLocation>();
         if (atomKK->angmom_flag)
-            angmom = (atomKK->k_angmom).view<DeviceType>();
+            angmom = (atomKK->k_angmom).view<RequestedLocation>();
         if (atomKK->torque_flag)
-            torque = (atomKK->k_torque).view<DeviceType>();
+            torque = (atomKK->k_torque).view<RequestedLocation>();
 
         // wrap these KOKKOS arrays into DLManagedTensor to pass to callback
 
@@ -174,61 +184,59 @@ public:
     DLDevice dldevice(bool gpu_flag)
     {
         int gpu_id = 0;
-        auto device_id = gpu_id; // be careful here 
+        auto device_id = gpu_id;  // be careful here
         return DLDevice { gpu_flag ? kDLCUDA : kDLCPU, device_id };
     }
 
-
     template <typename T>
     DLManagedTensorPtr wrap(
-        void* data, const LAMMPS_NS::dlext::AccessLocation location, const LAMMPS_NS::dlext::AccessMode mode,
-        const int num_particles, int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0
+        void* data, const AccessLocation location, const AccessMode mode, const int num_particles,
+        int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0
     )
     {
         assert((size2 >= 1));
 
-        #ifdef KOKKOS_ENABLE_CUDA
+#ifdef KOKKOS_ENABLE_CUDA
         bool gpu_flag = (location == kOnDevice);
-        #else
+#else
         bool gpu_flag = false;
-        #endif
-/*
-        //auto location = gpu_flag ? kOnDevice : kOnHost;
-        //auto handle = cxx11utils::make_unique<T>(data, location, mode);
-        //auto bridge = cxx11utils::make_unique<DLDataBridge<T>>(handle);
-        
-        //bridge->tensor.manager_ctx = bridge.get();
-        bridge->tensor.deleter = delete_bridge<T>;
+#endif
+        /*
+                //auto location = gpu_flag ? kOnDevice : kOnHost;
+                //auto handle = cxx11utils::make_unique<T>(data, location, mode);
+                //auto bridge = cxx11utils::make_unique<DLDataBridge<T>>(handle);
 
-        auto& dltensor = bridge->tensor.dl_tensor;
-        // cast handle->data to void* -- no need
-        //dltensor.data = opaque(bridge->handle->data);
-        dltensor.device = dldevice(gpu_flag);
-        // dtype()
-        dltensor.dtype = dtype<T>();
+                //bridge->tensor.manager_ctx = bridge.get();
+                bridge->tensor.deleter = delete_bridge<T>;
 
-        auto& shape = bridge->shape;
-        // first be the number of particles
-        shape.push_back(num_particles);
-        if (size2 > 1)
-        shape.push_back(size2);
-        // from one particle datum to the next one
-        auto& strides = bridge->strides;
-        strides.push_back(stride1<T>() + stride1_offset);
-        if (size2 > 1)
-            strides.push_back(1);
+                auto& dltensor = bridge->tensor.dl_tensor;
+                // cast handle->data to void* -- no need
+                //dltensor.data = opaque(bridge->handle->data);
+                dltensor.device = dldevice(gpu_flag);
+                // dtype()
+                dltensor.dtype = dtype<T>();
 
-        dltensor.ndim = shape.size(); // 1 or 2 dims
-        dltensor.shape = reinterpret_cast<std::int64_t*>(shape.data());
-        dltensor.strides = reinterpret_cast<std::int64_t*>(strides.data());
-        // offset for the beginning pointer
-        dltensor.byte_offset = offset;
+                auto& shape = bridge->shape;
+                // first be the number of particles
+                shape.push_back(num_particles);
+                if (size2 > 1)
+                shape.push_back(size2);
+                // from one particle datum to the next one
+                auto& strides = bridge->strides;
+                strides.push_back(stride1<T>() + stride1_offset);
+                if (size2 > 1)
+                    strides.push_back(1);
 
-        return &(bridge.release()->tensor);
+                dltensor.ndim = shape.size(); // 1 or 2 dims
+                dltensor.shape = reinterpret_cast<std::int64_t*>(shape.data());
+                dltensor.strides = reinterpret_cast<std::int64_t*>(strides.data());
+                // offset for the beginning pointer
+                dltensor.byte_offset = offset;
 
-*/
+                return &(bridge.release()->tensor);
+
+        */
     }
-    
 
 private:
     ExternalUpdater _update_callback;
@@ -238,17 +246,17 @@ private:
 
     // the ArrayTypes namespace and its structs (t_x_array, t_v_array and so on)
     // are defined in kokkos_type.h
-    typename ArrayTypes<DeviceType>::t_x_array x;
-    typename ArrayTypes<DeviceType>::t_v_array v;
-    typename ArrayTypes<DeviceType>::t_f_array f;
-    typename ArrayTypes<DeviceType>::t_v_array omega;
-    typename ArrayTypes<DeviceType>::t_v_array angmom;
-    typename ArrayTypes<DeviceType>::t_f_array torque;
-    typename ArrayTypes<DeviceType>::t_float_1d mass;
-    typename ArrayTypes<DeviceType>::t_int_1d type;
-    typename ArrayTypes<DeviceType>::t_int_1d mask;
-    typename ArrayTypes<DeviceType>::t_tagint_1d tag;
-    typename ArrayTypes<DeviceType>::t_imageint_1d image;
+    // typename ArrayTypes<DeviceType>::t_x_array x;
+    // typename ArrayTypes<DeviceType>::t_v_array v;
+    // typename ArrayTypes<DeviceType>::t_f_array f;
+    // typename ArrayTypes<DeviceType>::t_v_array omega;
+    // typename ArrayTypes<DeviceType>::t_v_array angmom;
+    // typename ArrayTypes<DeviceType>::t_f_array torque;
+    // typename ArrayTypes<DeviceType>::t_float_1d mass;
+    // typename ArrayTypes<DeviceType>::t_int_1d type;
+    // typename ArrayTypes<DeviceType>::t_int_1d mask;
+    // typename ArrayTypes<DeviceType>::t_tagint_1d tag;
+    // typename ArrayTypes<DeviceType>::t_imageint_1d image;
 };
 
 /*
