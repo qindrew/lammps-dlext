@@ -30,8 +30,10 @@ using DLManagedTensorDeleter = void (*)(DLManagedTensorPtr);
 template <typename T>
 using tdual_array = Kokkos::DualView<T, Kokkos::LayoutRight, Kokkos::CudaSpace>;
 
+//template <typename T>
+//using ArrayHandleUPtr = std::unique_ptr<tdual_array<T>>;
 template <typename T>
-using ArrayHandleUPtr = std::unique_ptr<tdual_array<T>>;
+using ArrayHandleUPtr = std::unique_ptr<T*>;
 
 // } // Aliases
 

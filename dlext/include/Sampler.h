@@ -122,14 +122,14 @@ public:
         auto type = (atomKK->k_type).view<RequestedLocation>();
         auto image = (atomKK->k_image).view<RequestedLocation>();
         auto tag = (atomKK->k_tag).view<RequestedLocation>();
-
+/*
         if (atomKK->omega_flag)
             omega = (atomKK->k_omega).view<RequestedLocation>();
         if (atomKK->angmom_flag)
             angmom = (atomKK->k_angmom).view<RequestedLocation>();
         if (atomKK->torque_flag)
             torque = (atomKK->k_torque).view<RequestedLocation>();
-
+*/
         // wrap these KOKKOS arrays into DLManagedTensor to pass to callback
 
         int nlocal = atom->nlocal;
@@ -151,33 +151,43 @@ public:
         forward_data(_update_callback, _location, _mode, update->ntimestep);
     }
 
+    template <typename RequestedLocation>
     auto get_positions()
     {
         int nlocal = atom->nlocal;
+        auto x = (atomKK->k_x).view<RequestedLocation>();
         return wrap<Scalar3>(x.data(), _location, _mode, nlocal, 3);
     }
 
+    template <typename RequestedLocation>
     auto get_velocities()
     {
         int nlocal = atom->nlocal;
+        auto v = (atomKK->k_v).view<RequestedLocation>();
         return wrap<Scalar3>(v.data(), _location, _mode, nlocal, 3);
     }
 
+    template <typename RequestedLocation>
     auto get_net_forces()
     {
         int nlocal = atom->nlocal;
+        auto f = (atomKK->k_f).view<RequestedLocation>();
         return wrap<Scalar3>(f.data(), _location, _mode, nlocal, 3);
     }
 
+    template <typename RequestedLocation>
     auto get_type()
     {
         int nlocal = atom->nlocal;
+        auto type = (atomKK->k_type).view<RequestedLocation>();
         return wrap<int>(type.data(), _location, _mode, nlocal, 1);
     }
 
+    template <typename RequestedLocation>
     auto get_tag()
     {
         int nlocal = atom->nlocal;
+        auto tag = (atomKK->k_tag).view<RequestedLocation>();
         return wrap<tagint>(tag.data(), _location, _mode, nlocal, 1);
     }
 
@@ -236,6 +246,31 @@ public:
                 return &(bridge.release()->tensor);
 
         */
+        std::vector<int64_t> shape;
+        std::vector<int64_t> strides;
+        DLManagedTensor* tensor = new DLManagedTensor;
+        auto& dltensor = tensor->dl_tensor;
+        
+        dltensor.device = dldevice(gpu_flag);
+        // dtype()
+        dltensor.dtype = dtype<T>();
+
+        // first be the number of particles
+        shape.push_back(num_particles);
+        if (size2 > 1)
+        shape.push_back(size2);
+        // from one particle datum to the next one
+        strides.push_back(stride1<T>() + stride1_offset);
+        if (size2 > 1)
+            strides.push_back(1);
+
+        dltensor.ndim = shape.size(); // 1 or 2 dims
+        dltensor.shape = reinterpret_cast<std::int64_t*>(shape.data());
+        dltensor.strides = reinterpret_cast<std::int64_t*>(strides.data());
+        // offset for the beginning pointer
+        dltensor.byte_offset = offset;
+
+        return tensor;
     }
 
 private:

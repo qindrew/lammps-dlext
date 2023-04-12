@@ -23,12 +23,14 @@ void export_PySampler(py::module m)
           int narg = cstrs.size();
           return (new LAMMPS_dlext::Sampler<PyFunction, LMPDeviceType>(lmp, narg, cstrs.data(), function, location, mode));
         }))
-        .def("forward_data", &PySampler::forward_data<PyFunction>)
-        .def("get_positions", &PySampler::get_positions)
-        .def("get_velocities", &PySampler::get_velocities)
-        .def("get_net_forces", &PySampler::get_net_forces)
-        .def("get_type", &PySampler::get_type)
-        .def("get_tag", &PySampler::get_tag);
+        .def("forward_data", &PySampler::forward_data<PyFunction>);
+        /*
+        .def("get_positions", &PySampler::get_positions<LAMMPS_dlext::AccessLocation>)
+        .def("get_velocities", &PySampler::get_velocities<LAMMPS_dlext::AccessLocation>)
+        .def("get_net_forces", &PySampler::get_net_forces<LAMMPS_dlext::AccessLocation>)
+        .def("get_type", &PySampler::get_type<LAMMPS_dlext::AccessLocation>)
+        .def("get_tag", &PySampler::get_tag<LAMMPS_dlext::AccessLocation>);
+        */
     
 }
 
