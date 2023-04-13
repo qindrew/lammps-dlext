@@ -70,12 +70,8 @@ template <typename ExternalUpdater, typename DeviceType>
 class DEFAULT_VISIBILITY Sampler : public FixExternal {
 public:
     //! Constructor
-    Sampler(
-        LAMMPS* lmp, int narg, char** arg, ExternalUpdater update_callback, AccessLocation location,
-        AccessMode mode
-    )
+    Sampler(LAMMPS* lmp, int narg, char** arg, AccessLocation location, AccessMode mode)
         : FixExternal(lmp, narg, arg)
-        , _update_callback { update_callback }
         , _location { location }
         , _mode { mode }
     {
@@ -88,6 +84,11 @@ public:
     }
 
     int setmask() override { return POST_FORCE; }
+
+    void set_callback(ExternalUpdater update_callback)
+    {
+        _update_callback = update_callback;
+    }
 
     //! Wraps the system positions, velocities, reverse tags, images and forces as
     //! DLPack tensors and passes them to the external function `callback`.
