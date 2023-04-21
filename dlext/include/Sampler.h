@@ -115,33 +115,30 @@ public:
         // TODO:
         // 1. Instead of datamask_read we should choose based on the AccessMode
         // 2. Check if execution_space should match the DeviceType or Location here
-        atomKK->sync(execution_space, datamask_read);
+        if (mode == kRead)
+            _kokkos_mode = datamask_read;
+        else if (mode == kReadWrite)
+            _kokkos_mode = datamask_modify;
+        atomKK->sync(execution_space, _kokkos_mode);
 
-        auto x = (atomKK->k_x).view<RequestedLocation>();
-        auto v = (atomKK->k_v).view<RequestedLocation>();
-        auto f = (atomKK->k_f).view<RequestedLocation>();
-        auto type = (atomKK->k_type).view<RequestedLocation>();
-        auto image = (atomKK->k_image).view<RequestedLocation>();
-        auto tag = (atomKK->k_tag).view<RequestedLocation>();
-/*
-        if (atomKK->omega_flag)
-            omega = (atomKK->k_omega).view<RequestedLocation>();
-        if (atomKK->angmom_flag)
-            angmom = (atomKK->k_angmom).view<RequestedLocation>();
-        if (atomKK->torque_flag)
-            torque = (atomKK->k_torque).view<RequestedLocation>();
-*/
+        // the x, v and f are of t_x_array, t_v_array and so on, as defined in kokkos_type.h
         // wrap these KOKKOS arrays into DLManagedTensor to pass to callback
 
-        int nlocal = atom->nlocal;
-
+/*      
+        int nlocal = atom->nlocal;  
         auto pos_capsule = wrap<Scalar3>(x.data(), location, mode, nlocal, 3);
-/*        
         auto vel_capsule = wrap<Scalar3>(v.data(), location, mode, nlocal, 3);
         auto type_capsule = wrap<int>(type.data(), location, mode, nlocal, 1);
         auto tag_capsule = wrap<tagint>(tag.data(), location, mode, nlocal, 1);
         auto force_capsule = wrap<Scalar3>(f.data(), location, mode, nlocal, 3);
 */
+        auto x = get_positions<RequestedLocation>();
+        auto v = get_velocities<RequestedLocation>();
+/*
+        auto f = get_net_forces<RequestedLocation>();
+        auto type = get_type<RequestedLocation>();
+        auto tag = get_tag<RequestedLocation>();
+*/        
         // callback might require the info of the simulation timestep `n`
         // callback(pos_capsule, vel_capsule, rtags_capsule, img_capsule, force_capsule, n);
     }
@@ -213,9 +210,7 @@ public:
 #else
         bool gpu_flag = false;
 #endif
-        
-        //auto location = gpu_flag ? kOnDevice : kOnHost;
-        //auto handle = cxx11utils::make_unique<T>(data, location, mode);
+
         auto bridge = cxx11utils::make_unique<DLDataBridge<T>>(data);
 
         bridge->tensor.manager_ctx = bridge.get();
@@ -232,7 +227,7 @@ public:
         // first be the number of particles
         shape.push_back(num_particles);
         if (size2 > 1)
-        shape.push_back(size2);
+            shape.push_back(size2);
         // from one particle datum to the next one
         auto& strides = bridge->strides;
         strides.push_back(stride1<T>() + stride1_offset);
@@ -246,94 +241,14 @@ public:
         dltensor.byte_offset = offset;
 
         return &(bridge.release()->tensor);
-
-        
-/*       
-        std::vector<int64_t> shape;
-        std::vector<int64_t> strides;
-        DLManagedTensor* tensor = new DLManagedTensor;
-        auto& dltensor = tensor->dl_tensor;
-        
-        dltensor.device = dldevice(gpu_flag);
-        // dtype()
-        dltensor.dtype = dtype<T>();
-
-        // first be the number of particles
-        shape.push_back(num_particles);
-        if (size2 > 1)
-        shape.push_back(size2);
-        // from one particle datum to the next one
-        strides.push_back(stride1<T>() + stride1_offset);
-        if (size2 > 1)
-            strides.push_back(1);
-
-        dltensor.ndim = shape.size(); // 1 or 2 dims
-        dltensor.shape = reinterpret_cast<std::int64_t*>(shape.data());
-        dltensor.strides = reinterpret_cast<std::int64_t*>(strides.data());
-        // offset for the beginning pointer
-        dltensor.byte_offset = offset;
-
-        return tensor;
-*/        
     }
 
 private:
     ExternalUpdater _update_callback;
     AccessLocation _location;
     AccessMode _mode;
-    int _nlocal;
-
-    // the ArrayTypes namespace and its structs (t_x_array, t_v_array and so on)
-    // are defined in kokkos_type.h
-    // typename ArrayTypes<DeviceType>::t_x_array x;
-    // typename ArrayTypes<DeviceType>::t_v_array v;
-    // typename ArrayTypes<DeviceType>::t_f_array f;
-    // typename ArrayTypes<DeviceType>::t_v_array omega;
-    // typename ArrayTypes<DeviceType>::t_v_array angmom;
-    // typename ArrayTypes<DeviceType>::t_f_array torque;
-    // typename ArrayTypes<DeviceType>::t_float_1d mass;
-    // typename ArrayTypes<DeviceType>::t_int_1d type;
-    // typename ArrayTypes<DeviceType>::t_int_1d mask;
-    // typename ArrayTypes<DeviceType>::t_tagint_1d tag;
-    // typename ArrayTypes<DeviceType>::t_imageint_1d image;
+    unsigned int _kokkos_mode;
 };
-
-/*
-struct Positions final {
-    static DLManagedTensorPtr from(LAMMPS* lmp, AccessLocation location, AccessMode mode)
-    {
-
-       atomKK->sync(execution_space,datamask_read);
-        return wrap(x, location, mode, 3);
-    }
-};
-
-struct Types final {
-    static DLManagedTensorPtr from(AccessLocation location, AccessMode mode
-    )
-    {
-        return wrap(sampler.get_types(), location, mode, 1);
-    }
-};
-
-struct Velocities final {
-    static DLManagedTensorPtr from(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler,
-        AccessLocation location, AccessMode mode
-    )
-    {
-        return wrap(sampler.get_velocities(), location, mode, 3);
-    }
-};
-
-struct NetForces final {
-    static DLManagedTensorPtr from(const Sampler<ExternalUpdater, Wrapper, DeviceType>& sampler,
-        AccessLocation location, AccessMode mode
-    )
-    {
-        return wrap(sampler.get_net_forces(), location, mode, 3);
-    }
-};
-*/
 
 }  // namespace dlext
 
