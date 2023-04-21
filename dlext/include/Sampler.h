@@ -124,23 +124,14 @@ public:
         // the x, v and f are of t_x_array, t_v_array and so on, as defined in kokkos_type.h
         // wrap these KOKKOS arrays into DLManagedTensor to pass to callback
 
-/*      
-        int nlocal = atom->nlocal;  
-        auto pos_capsule = wrap<Scalar3>(x.data(), location, mode, nlocal, 3);
-        auto vel_capsule = wrap<Scalar3>(v.data(), location, mode, nlocal, 3);
-        auto type_capsule = wrap<int>(type.data(), location, mode, nlocal, 1);
-        auto tag_capsule = wrap<tagint>(tag.data(), location, mode, nlocal, 1);
-        auto force_capsule = wrap<Scalar3>(f.data(), location, mode, nlocal, 3);
-*/
-        auto x = get_positions<RequestedLocation>();
-        auto v = get_velocities<RequestedLocation>();
-/*
-        auto f = get_net_forces<RequestedLocation>();
-        auto type = get_type<RequestedLocation>();
-        auto tag = get_tag<RequestedLocation>();
-*/        
+        auto pos_capsule = get_positions<RequestedLocation>();
+        auto vel_capsule = get_velocities<RequestedLocation>();
+        auto force_capsule = get_net_forces<RequestedLocation>();
+        auto type_capsule = get_type<RequestedLocation>();
+        auto tag_capsule = get_tag<RequestedLocation>();
+        
         // callback might require the info of the simulation timestep `n`
-        // callback(pos_capsule, vel_capsule, rtags_capsule, img_capsule, force_capsule, n);
+        _update_callback(pos_capsule, vel_capsule, type_capsule, tag_capsule, force_capsule, n);
     }
 
     //! This function allows the external callback `_update_callback` to be called after

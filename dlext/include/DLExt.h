@@ -101,9 +101,7 @@ constexpr DLDataType dtype<Scalar3>() { return DLDataType { kDLFloat, kBits, 1 }
 template <>
 constexpr DLDataType dtype<Scalar>() { return DLDataType { kDLFloat, kBits, 1 }; }
 template <>
-constexpr DLDataType dtype<int3>() { return DLDataType { kDLInt, 32, 1 }; }
-template <>
-constexpr DLDataType dtype<unsigned int>() { return DLDataType { kDLUInt, 32, 1 }; }
+constexpr DLDataType dtype<int>() { return DLDataType { kDLUInt, 32, 1 }; }
 
 template <typename>
 constexpr int64_t stride1();
@@ -114,9 +112,7 @@ constexpr int64_t stride1<Scalar3>() { return 3; }
 template <>
 constexpr int64_t stride1<Scalar>() { return 1; }
 template <>
-constexpr int64_t stride1<int3>() { return 3; }
-template <>
-constexpr int64_t stride1<unsigned int>() { return 1; }
+constexpr int64_t stride1<int>() { return 1; }
 
 }  // namespace dlext
 
