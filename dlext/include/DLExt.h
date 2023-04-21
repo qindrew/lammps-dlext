@@ -64,7 +64,7 @@ struct DLDataBridge {
     std::vector<int64_t> strides;
     DLManagedTensor tensor;
 
-    DLDataBridge(ArrayHandleUPtr<T>& handle)
+    DLDataBridge(void* _handle)
         : handle { std::move(handle) }
     { }
 };

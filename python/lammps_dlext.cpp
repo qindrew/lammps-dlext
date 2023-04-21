@@ -16,17 +16,17 @@ void export_PySampler(py::module m)
     using PySamplerSPtr = std::shared_ptr<PySampler>;
 
     py::class_<PySampler>(m, "DLExtSampler")
-        .def(py::init([](LAMMPS* lmp, std::vector<std::string> args, LAMMPS_dlext::AccessLocation location, LAMMPS_dlext::AccessMode mode) {
+        .def(py::init([](LAMMPS_NS::LAMMPS& lmp, std::vector<std::string> args,  LAMMPS_dlext::AccessLocation location, LAMMPS_dlext::AccessMode mode) {
           std::vector<char *> cstrs;
           cstrs.reserve(args.size());
           for (auto &s : args) cstrs.push_back(&s[0]);
           int narg = cstrs.size();
-          return (new LAMMPS_dlext::Sampler<PyFunction, LMPDeviceType>(lmp, narg, cstrs.data(), location, mode));
+          return (new LAMMPS_dlext::Sampler<PyFunction, LMPDeviceType>(&lmp, narg, cstrs.data(), location, mode));
         }))
         .def("set_callback", &PySampler::set_callback)
-        .def("forward_data", &PySampler::forward_data<PyFunction>);
-        /*
-        .def("get_positions", &PySampler::get_positions<LAMMPS_dlext::AccessLocation>)
+        .def("forward_data", &PySampler::forward_data<PyFunction>)
+        .def("get_positions", &PySampler::get_positions<LMPDeviceType>);
+         /*
         .def("get_velocities", &PySampler::get_velocities<LAMMPS_dlext::AccessLocation>)
         .def("get_net_forces", &PySampler::get_net_forces<LAMMPS_dlext::AccessLocation>)
         .def("get_type", &PySampler::get_type<LAMMPS_dlext::AccessLocation>)

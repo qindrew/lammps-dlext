@@ -136,11 +136,12 @@ public:
         int nlocal = atom->nlocal;
 
         auto pos_capsule = wrap<Scalar3>(x.data(), location, mode, nlocal, 3);
+/*        
         auto vel_capsule = wrap<Scalar3>(v.data(), location, mode, nlocal, 3);
         auto type_capsule = wrap<int>(type.data(), location, mode, nlocal, 1);
         auto tag_capsule = wrap<tagint>(tag.data(), location, mode, nlocal, 1);
         auto force_capsule = wrap<Scalar3>(f.data(), location, mode, nlocal, 3);
-
+*/
         // callback might require the info of the simulation timestep `n`
         // callback(pos_capsule, vel_capsule, rtags_capsule, img_capsule, force_capsule, n);
     }
@@ -212,41 +213,42 @@ public:
 #else
         bool gpu_flag = false;
 #endif
-        /*
-                //auto location = gpu_flag ? kOnDevice : kOnHost;
-                //auto handle = cxx11utils::make_unique<T>(data, location, mode);
-                //auto bridge = cxx11utils::make_unique<DLDataBridge<T>>(handle);
+        
+        //auto location = gpu_flag ? kOnDevice : kOnHost;
+        //auto handle = cxx11utils::make_unique<T>(data, location, mode);
+        auto bridge = cxx11utils::make_unique<DLDataBridge<T>>(data);
 
-                //bridge->tensor.manager_ctx = bridge.get();
-                bridge->tensor.deleter = delete_bridge<T>;
+        bridge->tensor.manager_ctx = bridge.get();
+        bridge->tensor.deleter = delete_bridge<T>;
 
-                auto& dltensor = bridge->tensor.dl_tensor;
-                // cast handle->data to void* -- no need
-                //dltensor.data = opaque(bridge->handle->data);
-                dltensor.device = dldevice(gpu_flag);
-                // dtype()
-                dltensor.dtype = dtype<T>();
+        auto& dltensor = bridge->tensor.dl_tensor;
+        // cast handle->data to void* -- no need
+        //dltensor.data = opaque(bridge->handle->data);
+        dltensor.device = dldevice(gpu_flag);
+        // dtype()
+        dltensor.dtype = dtype<T>();
 
-                auto& shape = bridge->shape;
-                // first be the number of particles
-                shape.push_back(num_particles);
-                if (size2 > 1)
-                shape.push_back(size2);
-                // from one particle datum to the next one
-                auto& strides = bridge->strides;
-                strides.push_back(stride1<T>() + stride1_offset);
-                if (size2 > 1)
-                    strides.push_back(1);
+        auto& shape = bridge->shape;
+        // first be the number of particles
+        shape.push_back(num_particles);
+        if (size2 > 1)
+        shape.push_back(size2);
+        // from one particle datum to the next one
+        auto& strides = bridge->strides;
+        strides.push_back(stride1<T>() + stride1_offset);
+        if (size2 > 1)
+            strides.push_back(1);
 
-                dltensor.ndim = shape.size(); // 1 or 2 dims
-                dltensor.shape = reinterpret_cast<std::int64_t*>(shape.data());
-                dltensor.strides = reinterpret_cast<std::int64_t*>(strides.data());
-                // offset for the beginning pointer
-                dltensor.byte_offset = offset;
+        dltensor.ndim = shape.size(); // 1 or 2 dims
+        dltensor.shape = reinterpret_cast<std::int64_t*>(shape.data());
+        dltensor.strides = reinterpret_cast<std::int64_t*>(strides.data());
+        // offset for the beginning pointer
+        dltensor.byte_offset = offset;
 
-                return &(bridge.release()->tensor);
+        return &(bridge.release()->tensor);
 
-        */
+        
+/*       
         std::vector<int64_t> shape;
         std::vector<int64_t> strides;
         DLManagedTensor* tensor = new DLManagedTensor;
@@ -272,6 +274,7 @@ public:
         dltensor.byte_offset = offset;
 
         return tensor;
+*/        
     }
 
 private:
