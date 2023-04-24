@@ -15,13 +15,21 @@ void export_PySampler(py::module m)
     using PySamplerSPtr = std::shared_ptr<PySampler>;
 
     py::class_<PySampler>(m, "DLExtSampler")
-        .def(py::init([](LAMMPS_NS::LAMMPS& lmp, std::vector<std::string> args,
-                         LAMMPS_dlext::AccessLocation location, LAMMPS_dlext::AccessMode mode) {
-          std::vector<char *> cstrs;
-          cstrs.reserve(args.size());
-          for (auto &s : args) cstrs.push_back(&s[0]);
-          int narg = cstrs.size();
-          return (new LAMMPS_dlext::Sampler<PyFunction, LMPDeviceType>(&lmp, narg, cstrs.data(), location, mode));
+        .def(py::init(
+            [ ] (
+                py::object lmp,
+                std::vector<std::string> args,
+                LAMMPS_dlext::AccessLocation location, LAMMPS_dlext::AccessMode mode
+            ) {
+                auto pyptr = lmp.attr("lmp");
+                auto pyaddr = pyptr.attr("value");
+                auto lmp_addr = pyaddr.cast<uintptr_t>();
+                auto lmp_ptr = reinterpret_cast<LAMMPS_NS::LAMMPS*>(lmp_addr);
+                std::vector<char *> cstrs;
+                cstrs.reserve(args.size());
+                for (auto &s : args) cstrs.push_back(&s[0]);
+                int narg = cstrs.size();
+                return (new LAMMPS_dlext::Sampler<PyFunction, LMPDeviceType>(lmp_ptr, narg, cstrs.data(), location, mode));
         }))
         .def("set_callback", &PySampler::set_callback)
         .def("forward_data", &PySampler::forward_data<PyFunction>)
