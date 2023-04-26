@@ -124,14 +124,33 @@ public:
         // the x, v and f are of t_x_array, t_v_array and so on, as defined in kokkos_type.h
         // wrap these KOKKOS arrays into DLManagedTensor to pass to callback
 
-        auto pos_capsule = get_positions<RequestedLocation>();
-        auto vel_capsule = get_velocities<RequestedLocation>();
-        auto force_capsule = get_net_forces<RequestedLocation>();
-        auto type_capsule = get_type<RequestedLocation>();
-        auto tag_capsule = get_tag<RequestedLocation>();
+        if (location == kOnHost) {
+            auto pos_capsule = get_positions<kOnHost>();
+/*            
+            auto vel_capsule = get_velocities<kOnHost>();
+            auto force_capsule = get_net_forces<kOnHost>();
+            auto type_capsule = get_type<kOnHost>();
+            auto tag_capsule = get_tag<kOnHost>();
+
+            // callback might require the info of the simulation timestep `n`
+            _update_callback(pos_capsule, vel_capsule, type_capsule, tag_capsule, force_capsule, n);
+*/            
+        } else {
+            auto pos_capsule = get_positions<kOnDevice>();
+/*            
+            auto vel_capsule = get_velocities<LMPDeviceType>();
+            auto force_capsule = get_net_forces<LMPDeviceType>();
+            auto type_capsule = get_type<LMPDeviceType>();
+            auto tag_capsule = get_tag<LMPDeviceType>();
+
+            // callback might require the info of the simulation timestep `n`
+            _update_callback(pos_capsule, vel_capsule, type_capsule, tag_capsule, force_capsule, n);
+*/            
+        }
         
-        // callback might require the info of the simulation timestep `n`
-        _update_callback(pos_capsule, vel_capsule, type_capsule, tag_capsule, force_capsule, n);
+        
+        
+        
     }
 
     //! This function allows the external callback `_update_callback` to be called after
@@ -141,12 +160,18 @@ public:
         forward_data(_update_callback, _location, _mode, update->ntimestep);
     }
 
-    template <typename RequestedLocation>
+    template <AccessLocation location>
     auto get_positions()
     {
         int nlocal = atom->nlocal;
-        auto x = (atomKK->k_x).view<RequestedLocation>();
-        return wrap<Scalar3>(x.data(), _location, _mode, nlocal, 3);
+        if (location == kOnHost) {
+           auto x = (atomKK->k_x).view<LMPHostType>();
+           return wrap<Scalar3>(x.data(), _location, _mode, nlocal, 3);
+        } else {
+           auto x = (atomKK->k_x).view<LMPDeviceType>();
+           return wrap<Scalar3>(x.data(), _location, _mode, nlocal, 3);
+        }
+        
     }
 
     template <typename RequestedLocation>
