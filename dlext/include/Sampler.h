@@ -122,11 +122,10 @@ public:
         atomKK->sync(execution_space, _kokkos_mode);
 
         // the x, v and f are of t_x_array, t_v_array and so on, as defined in kokkos_type.h
-        // wrap these KOKKOS arrays into DLManagedTensor to pass to callback
+        // wrap these KOKKOS arrays into DLManagedTensor to pass to the callback
 
         if (location == kOnHost) {
             auto pos_capsule = get_positions<kOnHost>();
-/*            
             auto vel_capsule = get_velocities<kOnHost>();
             auto force_capsule = get_net_forces<kOnHost>();
             auto type_capsule = get_type<kOnHost>();
@@ -134,23 +133,18 @@ public:
 
             // callback might require the info of the simulation timestep `n`
             _update_callback(pos_capsule, vel_capsule, type_capsule, tag_capsule, force_capsule, n);
-*/            
+
         } else {
             auto pos_capsule = get_positions<kOnDevice>();
-/*            
-            auto vel_capsule = get_velocities<LMPDeviceType>();
-            auto force_capsule = get_net_forces<LMPDeviceType>();
-            auto type_capsule = get_type<LMPDeviceType>();
-            auto tag_capsule = get_tag<LMPDeviceType>();
+            auto vel_capsule = get_velocities<kOnDevice>();
+            auto force_capsule = get_net_forces<kOnDevice>();
+            auto type_capsule = get_type<kOnDevice>();
+            auto tag_capsule = get_tag<kOnDevice>();
 
             // callback might require the info of the simulation timestep `n`
             _update_callback(pos_capsule, vel_capsule, type_capsule, tag_capsule, force_capsule, n);
-*/            
         }
-        
-        
-        
-        
+
     }
 
     //! This function allows the external callback `_update_callback` to be called after
@@ -166,44 +160,63 @@ public:
         int nlocal = atom->nlocal;
         if (location == kOnHost) {
            auto x = (atomKK->k_x).view<LMPHostType>();
-           return wrap<Scalar3>(x.data(), _location, _mode, nlocal, 3);
+           return wrap<Scalar3>(x.data(), location, _mode, nlocal, 3);
         } else {
            auto x = (atomKK->k_x).view<LMPDeviceType>();
-           return wrap<Scalar3>(x.data(), _location, _mode, nlocal, 3);
+           return wrap<Scalar3>(x.data(), location, _mode, nlocal, 3);
         }
-        
     }
 
-    template <typename RequestedLocation>
+    template <AccessLocation location>
     auto get_velocities()
     {
         int nlocal = atom->nlocal;
-        auto v = (atomKK->k_v).view<RequestedLocation>();
-        return wrap<Scalar3>(v.data(), _location, _mode, nlocal, 3);
+        if (location == kOnHost) {
+           auto v = (atomKK->k_v).view<LMPHostType>();
+           return wrap<Scalar3>(v.data(), location, _mode, nlocal, 3);
+        } else {
+           auto v = (atomKK->k_v).view<LMPDeviceType>();
+           return wrap<Scalar3>(v.data(), location, _mode, nlocal, 3);
+        }
     }
 
-    template <typename RequestedLocation>
+    template <AccessLocation location>
     auto get_net_forces()
     {
         int nlocal = atom->nlocal;
-        auto f = (atomKK->k_f).view<RequestedLocation>();
-        return wrap<Scalar3>(f.data(), _location, _mode, nlocal, 3);
+        if (location == kOnHost) {
+           auto f = (atomKK->k_f).view<LMPHostType>();
+           return wrap<Scalar3>(f.data(), location, _mode, nlocal, 3);
+        } else {
+           auto f = (atomKK->k_f).view<LMPDeviceType>();
+           return wrap<Scalar3>(f.data(), location, _mode, nlocal, 3);
+        }
     }
 
-    template <typename RequestedLocation>
+    template <AccessLocation location>
     auto get_type()
     {
         int nlocal = atom->nlocal;
-        auto type = (atomKK->k_type).view<RequestedLocation>();
-        return wrap<int>(type.data(), _location, _mode, nlocal, 1);
+        if (location == kOnHost) {
+            auto type = (atomKK->k_type).view<LMPHostType>();
+            return wrap<int>(type.data(), location, _mode, nlocal, 1);
+        } else {
+            auto type = (atomKK->k_type).view<LMPDeviceType>();
+            return wrap<int>(type.data(), location, _mode, nlocal, 1);
+        }        
     }
 
-    template <typename RequestedLocation>
+    template <AccessLocation location>
     auto get_tag()
     {
         int nlocal = atom->nlocal;
-        auto tag = (atomKK->k_tag).view<RequestedLocation>();
-        return wrap<tagint>(tag.data(), _location, _mode, nlocal, 1);
+        if (location == kOnHost) {
+            auto tag = (atomKK->k_tag).view<LMPHostType>();
+            return wrap<int>(tag.data(), location, _mode, nlocal, 1);
+        } else {
+            auto tag = (atomKK->k_tag).view<LMPDeviceType>();
+            return wrap<tagint>(tag.data(), location, _mode, nlocal, 1);
+        }
     }
 
     DLDevice dldevice(bool gpu_flag)
@@ -221,11 +234,11 @@ public:
     {
         assert((size2 >= 1));
 
-#ifdef KOKKOS_ENABLE_CUDA
+        #ifdef KOKKOS_ENABLE_CUDA
         bool gpu_flag = (location == kOnDevice);
-#else
+        #else
         bool gpu_flag = false;
-#endif
+        #endif
 
         auto bridge = cxx11utils::make_unique<DLDataBridge<T>>(data);
 

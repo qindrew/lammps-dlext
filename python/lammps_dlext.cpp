@@ -34,18 +34,19 @@ void export_PySampler(py::module m)
         .def("set_callback", &PySampler::set_callback)
         .def("forward_data", &PySampler::forward_data<PyFunction>)
 
-        .def("get_positions", &PySampler::get_positions<LAMMPS_dlext::kOnDevice>)
+        .def("get_positions",  &PySampler::get_positions<LAMMPS_dlext::kOnDevice>)
+        .def("get_velocities", &PySampler::get_velocities<LAMMPS_dlext::kOnDevice>)
+        .def("get_net_forces", &PySampler::get_net_forces<LAMMPS_dlext::kOnDevice>)
+        .def("get_type",       &PySampler::get_type<LAMMPS_dlext::kOnDevice>)
+        .def("get_tag",        &PySampler::get_tag<LAMMPS_dlext::kOnDevice>)
         #ifdef KOKKOS_ENABLE_CUDA
-        .def("get_positions", &PySampler::get_positions<LAMMPS_dlext::kOnHost>)
+        .def("get_positions",  &PySampler::get_positions<LAMMPS_dlext::kOnHost>)
+        .def("get_velocities", &PySampler::get_velocities<LAMMPS_dlext::kOnHost>)
+        .def("get_net_forces", &PySampler::get_net_forces<LAMMPS_dlext::kOnHost>)
+        .def("get_type",       &PySampler::get_type<LAMMPS_dlext::kOnHost>)
+        .def("get_tag",        &PySampler::get_tag<LAMMPS_dlext::kOnHost>)
         #endif
-        ;
-        /*
-         def("get_velocities", &PySampler::get_velocities<LAMMPS_dlext::AccessLocation::kOnDevice>)
-        .def("get_net_forces", &PySampler::get_net_forces<LAMMPS_dlext::AccessLocation>)
-        .def("get_type", &PySampler::get_type<LAMMPS_dlext::AccessLocation>)
-        .def("get_tag", &PySampler::get_tag<LAMMPS_dlext::AccessLocation>);
-        */
-    
+        ;    
 }
 
 PYBIND11_MODULE(dlpack_extension, m)
@@ -53,9 +54,9 @@ PYBIND11_MODULE(dlpack_extension, m)
     // Enums
     py::enum_<LAMMPS_dlext::AccessLocation>(m, "AccessLocation")
         .value("OnDevice", LAMMPS_dlext::kOnDevice)
-#ifdef KOKKOS_ENABLE_CUDA
+        #ifdef KOKKOS_ENABLE_CUDA
         .value("OnHost", LAMMPS_NS::dlext::kOnHost)
-#endif
+        #endif
         ;
 
     py::enum_<LAMMPS_dlext::AccessMode>(m, "AccessMode")
