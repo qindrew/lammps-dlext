@@ -124,27 +124,14 @@ public:
         // the x, v and f are of t_x_array, t_v_array and so on, as defined in kokkos_type.h
         // wrap these KOKKOS arrays into DLManagedTensor to pass to the callback
 
-        if (location == kOnHost) {
-            auto pos_capsule = get_positions<kOnHost>();
-            auto vel_capsule = get_velocities<kOnHost>();
-            auto force_capsule = get_net_forces<kOnHost>();
-            auto type_capsule = get_type<kOnHost>();
-            auto tag_capsule = get_tag<kOnHost>();
+        auto pos_capsule = get_positions(location);
+        auto vel_capsule = get_velocities(location);
+        auto force_capsule = get_net_forces(location);
+        auto type_capsule = get_type(location);
+        auto tag_capsule = get_tag(location);
 
-            // callback might require the info of the simulation timestep `n`
-            _update_callback(pos_capsule, vel_capsule, type_capsule, tag_capsule, force_capsule, n);
-
-        } else {
-            auto pos_capsule = get_positions<kOnDevice>();
-            auto vel_capsule = get_velocities<kOnDevice>();
-            auto force_capsule = get_net_forces<kOnDevice>();
-            auto type_capsule = get_type<kOnDevice>();
-            auto tag_capsule = get_tag<kOnDevice>();
-
-            // callback might require the info of the simulation timestep `n`
-            _update_callback(pos_capsule, vel_capsule, type_capsule, tag_capsule, force_capsule, n);
-        }
-
+        // callback might require the info of the simulation timestep `n`
+        _update_callback(pos_capsule, vel_capsule, type_capsule, tag_capsule, force_capsule, n);
     }
 
     //! This function allows the external callback `_update_callback` to be called after
@@ -154,7 +141,15 @@ public:
         forward_data(_update_callback, _location, _mode, update->ntimestep);
     }
 
-    template <AccessLocation location>
+/*  The templated version leads to compiling errors in lammps_dlext.cpp with the instantiation
+         .def("get_positions",  &PySampler::get_positions<kOnDevice>)
+         #ifdef KOKKOS_ENABLE_CUDA
+         .def("get_positions",  &PySampler::get_positions<kOnHost>)
+         #endif
+    "error: no matching function for call to ‘pybind11::class_<LAMMPS_NS::dlext::Sampler<pybind11::function,
+        Kokkos::Cuda> >::def(const char [14], <unresolved overloaded function type>)"
+
+    template <AccessLocation requestedLocation>
     auto get_positions()
     {
         int nlocal = atom->nlocal;
@@ -166,9 +161,20 @@ public:
            return wrap<Scalar3>(x.data(), location, _mode, nlocal, 3);
         }
     }
+*/
+    auto get_positions(AccessLocation requestedLocation)
+    {
+        int nlocal = atom->nlocal;
+        if (requestedLocation == kOnHost) {
+           auto x = (atomKK->k_x).view<LMPHostType>();
+           return wrap<Scalar3>(x.data(), requestedLocation, _mode, nlocal, 3);
+        } else {
+           auto x = (atomKK->k_x).view<LMPDeviceType>();
+           return wrap<Scalar3>(x.data(), requestedLocation, _mode, nlocal, 3);
+        }
+    }
 
-    template <AccessLocation location>
-    auto get_velocities()
+    auto get_velocities(AccessLocation location)
     {
         int nlocal = atom->nlocal;
         if (location == kOnHost) {
@@ -180,8 +186,7 @@ public:
         }
     }
 
-    template <AccessLocation location>
-    auto get_net_forces()
+    auto get_net_forces(AccessLocation location)
     {
         int nlocal = atom->nlocal;
         if (location == kOnHost) {
@@ -193,8 +198,7 @@ public:
         }
     }
 
-    template <AccessLocation location>
-    auto get_type()
+    auto get_type(AccessLocation location)
     {
         int nlocal = atom->nlocal;
         if (location == kOnHost) {
@@ -206,8 +210,7 @@ public:
         }        
     }
 
-    template <AccessLocation location>
-    auto get_tag()
+    auto get_tag(AccessLocation location)
     {
         int nlocal = atom->nlocal;
         if (location == kOnHost) {

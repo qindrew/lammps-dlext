@@ -31,21 +31,13 @@ void export_PySampler(py::module m)
                 int narg = cstrs.size();
                 return (new LAMMPS_dlext::Sampler<PyFunction, LMPDeviceType>(lmp_ptr, narg, cstrs.data(), location, mode));
         }))
-        .def("set_callback", &PySampler::set_callback)
-        .def("forward_data", &PySampler::forward_data<PyFunction>)
-
-        .def("get_positions",  &PySampler::get_positions<LAMMPS_dlext::kOnDevice>)
-        .def("get_velocities", &PySampler::get_velocities<LAMMPS_dlext::kOnDevice>)
-        .def("get_net_forces", &PySampler::get_net_forces<LAMMPS_dlext::kOnDevice>)
-        .def("get_type",       &PySampler::get_type<LAMMPS_dlext::kOnDevice>)
-        .def("get_tag",        &PySampler::get_tag<LAMMPS_dlext::kOnDevice>)
-        #ifdef KOKKOS_ENABLE_CUDA
-        .def("get_positions",  &PySampler::get_positions<LAMMPS_dlext::kOnHost>)
-        .def("get_velocities", &PySampler::get_velocities<LAMMPS_dlext::kOnHost>)
-        .def("get_net_forces", &PySampler::get_net_forces<LAMMPS_dlext::kOnHost>)
-        .def("get_type",       &PySampler::get_type<LAMMPS_dlext::kOnHost>)
-        .def("get_tag",        &PySampler::get_tag<LAMMPS_dlext::kOnHost>)
-        #endif
+        .def("set_callback",   &PySampler::set_callback)
+        .def("forward_data",   &PySampler::forward_data<PyFunction>)
+        .def("get_positions",  &PySampler::get_positions)
+        .def("get_velocities", &PySampler::get_velocities)
+        .def("get_net_forces", &PySampler::get_net_forces)
+        .def("get_type",       &PySampler::get_type)
+        .def("get_tag",        &PySampler::get_tag)
         ;    
 }
 
