@@ -22,15 +22,15 @@ LAMMPS* to_lammps_ptr(py::object lmp)
 
 void export_LAMMPSView(py::module& m)
 {
-    py::class_<LAMMPSView>(m, "LAMMPSView")
+    py::class_<dl::LAMMPSView>(m, "LAMMPSView")
         .def(py::init(
-            [] (py::object lmp) { return cxx11::make_unique<LAMMPSView>(to_lammps_ptr(lmp)); }
+            [] (py::object lmp) { return cxx11::make_unique<dl::LAMMPSView>(to_lammps_ptr(lmp)); }
         ))
-        .def("device_type", &LAMMPSView::device_type)
-        .def("has_kokkos_cuda_enabled", &LAMMPSView::has_kokkos_cuda_enabled)
-        .def("local_particle_number", &LAMMPSView::local_particle_number)
-        .def("global_particle_number", &LAMMPSView::global_particle_number)
-        .def("synchronize", &LAMMPSView::synchronize)
+        .def("device_type", &dl::LAMMPSView::device_type)
+        .def("has_kokkos_cuda_enabled", &dl::LAMMPSView::has_kokkos_cuda_enabled)
+        .def("local_particle_number", &dl::LAMMPSView::local_particle_number)
+        .def("global_particle_number", &dl::LAMMPSView::global_particle_number)
+        .def("synchronize", &dl::LAMMPSView::synchronize)
 }
 
 void export_PySampler(py::module& m)
