@@ -4,7 +4,7 @@
 #ifndef DLEXT_SAMPLER_H_
 #define DLEXT_SAMPLER_H_
 
-#include "DLExt.h"
+#include "LAMMPSView.h"
 #include "KOKKOS/atom_kokkos.h"
 #include "KOKKOS/kokkos_type.h"
 #include "atom_masks.h"
@@ -19,23 +19,6 @@ namespace dlext
 namespace cxx11 = cxx11utils;
 
 //{ // Aliases
-
-//! Specifies where to acquire the data
-struct access_location {
-    //! The enum
-    enum Enum {
-        host,  //!< Ask to acquire the data on the host
-#ifdef KOKKOS_ENABLE_CUDA
-        device  //!< Ask to acquire the data on the device
-#endif
-    };
-};
-
-using AccessLocation = access_location::Enum;
-const auto kOnHost = access_location::host;
-#ifdef KOKKOS_ENABLE_CUDA
-const auto kOnDevice = access_location::device;
-#endif
 
 //! Specify how the data is to be accessed
 struct access_mode {
@@ -207,7 +190,7 @@ public:
         } else {
             auto type = (atomKK->k_type).view<LMPDeviceType>();
             return wrap<int>(type.data(), location, _mode, nlocal, 1);
-        }        
+        }
     }
 
     auto get_tag(AccessLocation location)
