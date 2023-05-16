@@ -26,7 +26,7 @@ public:
 
     // Provide easy access to the atom pointers
     Atom* atom_ptr() const;
-    AtomKokkos* atom_kokkos_ptr();
+    AtomKokkos* atom_kokkos_ptr() const;
 
     //! Given an execution space, returns kDLCUDA if LAMMPS was built with KOKKOS and
     //! Cuda supoprt, and it's available at runtime. Otherwise, returns kDLCPU.

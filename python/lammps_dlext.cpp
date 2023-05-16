@@ -31,6 +31,7 @@ void export_LAMMPSView(py::module& m)
         .def("local_particle_number", &dl::LAMMPSView::local_particle_number)
         .def("global_particle_number", &dl::LAMMPSView::global_particle_number)
         .def("synchronize", &dl::LAMMPSView::synchronize)
+        ;
 }
 
 void export_PySampler(py::module& m)
@@ -44,14 +45,14 @@ void export_PySampler(py::module& m)
             [ ] (
                 py::object lmp,
                 std::vector<std::string> args,
-                dl::AccessLocation location, dl::AccessMode mode
+                dl::AccessMode mode
             ) {
                 auto lmp_ptr = to_lammps_ptr(lmp);
                 std::vector<char *> cstrs;
                 cstrs.reserve(args.size());
                 for (auto &s : args) cstrs.push_back(&s[0]);
                 int narg = cstrs.size();
-                return (new dl::Sampler<PyFunction, LMPDeviceType>(lmp_ptr, narg, cstrs.data(), location, mode));
+                return (new dl::Sampler<PyFunction, LMPDeviceType>(lmp_ptr, narg, cstrs.data(), mode));
         }))
         .def("set_callback",   &PySampler::set_callback)
         .def("forward_data",   &PySampler::forward_data<PyFunction>)

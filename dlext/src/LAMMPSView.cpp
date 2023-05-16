@@ -2,10 +2,16 @@
 // This file is part of `lammps-dlext`, see LICENSE.md
 
 #include "LAMMPSView.h"
+#include "atom.h"
+#include "atom_masks.h"
+#include "KOKKOS/atom_kokkos.h"
 
-using namespace LAMMPS_NS::dlext;
+namespace LAMMPS_NS
+{
+namespace dlext
+{
 
-LAMMPSView::LAMMPSView(LAMMPS_NS* lmp)
+LAMMPSView::LAMMPSView(LAMMPS_NS::LAMMPS* lmp)
     : Pointers(lmp)
 { }
 
@@ -28,7 +34,7 @@ bool LAMMPSView::has_kokkos_cuda_enabled() const
 int LAMMPSView::local_particle_number() const { return atom_ptr()->nlocal; }
 bigint LAMMPSView::global_particle_number() const { return atom_ptr()->natoms; }
 
-void LAMMPSView::synchronize(ExecutionSpace requested_space = kOnDevice)
+void LAMMPSView::synchronize(ExecutionSpace requested_space)
 {
 #ifdef LMP_KOKKOS_GPU
     if (lmp->kokkos) {
@@ -41,3 +47,6 @@ ExecutionSpace LAMMPSView::try_pick(ExecutionSpace requested_space) const
 {
     return has_kokkos_cuda_enabled() ? requested_space : kOnHost;
 }
+
+} // dlext
+} // LAMMPS_NS

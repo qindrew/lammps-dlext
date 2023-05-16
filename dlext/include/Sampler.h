@@ -50,12 +50,11 @@ constexpr unsigned int DLEXT_MASK = X_MASK | V_MASK | F_MASK | TYPE_MASK | IMAGE
     | MASK_MASK | TORQUE_MASK | ANGMOM_MASK;
 
 template <typename ExternalUpdater, typename DeviceType>
-class DEFAULT_VISIBILITY Sampler : public FixExternal {
+class DEFAULT_VISIBILITY Sampler : public Fix {
 public:
     //! Constructor
-    Sampler(LAMMPS* lmp, int narg, char** arg, AccessLocation location, AccessMode mode)
-        : FixExternal(lmp, narg, arg)
-        , _location { location }
+    Sampler(LAMMPS* lmp, int narg, char** arg, AccessMode mode)
+        : Fix(lmp, narg, arg)
         , _mode { mode }
     {
         kokkosable = 1;
@@ -83,17 +82,17 @@ public:
     //! The data for the particles information is requested at the given `location`
     //! and access `mode`. NOTE: Forces are always passed in readwrite mode.
     template <typename Callback>
-    void forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
+    void forward_data(Callback callback, const ExecutionSpace exec_space, AccessMode mode, TimeStep n)
     {
-        if (location == kOnHost) {
-            _forward_data<LMPHostType>(callback, location, mode, n);
+        if (exec_space == kOnHost) {
+            _forward_data<Callback>(callback, exec_space, mode, n);
         } else {
-            _forward_data<LMPDeviceType>(callback, location, mode, n);
+            _forward_data<Callback>(callback, exec_space, mode, n);
         }
     }
 
-    template <typename RequestedLocation, typename Callback>
-    void _forward_data(Callback callback, AccessLocation location, AccessMode mode, TimeStep n)
+    template <typename Callback>
+    void _forward_data(Callback callback, const ExecutionSpace exec_space, AccessMode mode, TimeStep n)
     {
         // TODO:
         // 1. Instead of datamask_read we should choose based on the AccessMode
@@ -102,16 +101,16 @@ public:
             _kokkos_mode = datamask_read;
         else if (mode == kReadWrite)
             _kokkos_mode = datamask_modify;
-        atomKK->sync(execution_space, _kokkos_mode);
+        atomKK->sync(exec_space, _kokkos_mode);
 
         // the x, v and f are of t_x_array, t_v_array and so on, as defined in kokkos_type.h
         // wrap these KOKKOS arrays into DLManagedTensor to pass to the callback
 
-        auto pos_capsule = get_positions(location);
-        auto vel_capsule = get_velocities(location);
-        auto force_capsule = get_net_forces(location);
-        auto type_capsule = get_type(location);
-        auto tag_capsule = get_tag(location);
+        auto pos_capsule = get_positions(exec_space);
+        auto vel_capsule = get_velocities(exec_space);
+        auto force_capsule = get_net_forces(exec_space);
+        auto type_capsule = get_type(exec_space);
+        auto tag_capsule = get_tag(exec_space);
 
         // callback might require the info of the simulation timestep `n`
         _update_callback(pos_capsule, vel_capsule, type_capsule, tag_capsule, force_capsule, n);
@@ -121,7 +120,7 @@ public:
     //! every integration timestep
     void post_force(int) override
     {
-        forward_data(_update_callback, _location, _mode, update->ntimestep);
+        forward_data(_update_callback, execution_space, _mode, update->ntimestep);
     }
 
 /*  The templated version leads to compiling errors in lammps_dlext.cpp with the instantiation
@@ -145,63 +144,63 @@ public:
         }
     }
 */
-    auto get_positions(AccessLocation requestedLocation)
+    auto get_positions(const ExecutionSpace exec_space)
     {
         int nlocal = atom->nlocal;
-        if (requestedLocation == kOnHost) {
+        if (exec_space == kOnHost) {
            auto x = (atomKK->k_x).view<LMPHostType>();
-           return wrap<Scalar3>(x.data(), requestedLocation, _mode, nlocal, 3);
+           return wrap<Scalar3>(x.data(), exec_space, _mode, nlocal, 3);
         } else {
            auto x = (atomKK->k_x).view<LMPDeviceType>();
-           return wrap<Scalar3>(x.data(), requestedLocation, _mode, nlocal, 3);
+           return wrap<Scalar3>(x.data(), exec_space, _mode, nlocal, 3);
         }
     }
 
-    auto get_velocities(AccessLocation location)
+    auto get_velocities(const ExecutionSpace exec_space)
     {
         int nlocal = atom->nlocal;
-        if (location == kOnHost) {
+        if (exec_space == kOnHost) {
            auto v = (atomKK->k_v).view<LMPHostType>();
-           return wrap<Scalar3>(v.data(), location, _mode, nlocal, 3);
+           return wrap<Scalar3>(v.data(), exec_space, _mode, nlocal, 3);
         } else {
            auto v = (atomKK->k_v).view<LMPDeviceType>();
-           return wrap<Scalar3>(v.data(), location, _mode, nlocal, 3);
+           return wrap<Scalar3>(v.data(), exec_space, _mode, nlocal, 3);
         }
     }
 
-    auto get_net_forces(AccessLocation location)
+    auto get_net_forces(const ExecutionSpace exec_space)
     {
         int nlocal = atom->nlocal;
-        if (location == kOnHost) {
+        if (exec_space == kOnHost) {
            auto f = (atomKK->k_f).view<LMPHostType>();
-           return wrap<Scalar3>(f.data(), location, _mode, nlocal, 3);
+           return wrap<Scalar3>(f.data(), exec_space, _mode, nlocal, 3);
         } else {
            auto f = (atomKK->k_f).view<LMPDeviceType>();
-           return wrap<Scalar3>(f.data(), location, _mode, nlocal, 3);
+           return wrap<Scalar3>(f.data(), exec_space, _mode, nlocal, 3);
         }
     }
 
-    auto get_type(AccessLocation location)
+    auto get_type(const ExecutionSpace exec_space)
     {
         int nlocal = atom->nlocal;
-        if (location == kOnHost) {
+        if (exec_space == kOnHost) {
             auto type = (atomKK->k_type).view<LMPHostType>();
-            return wrap<int>(type.data(), location, _mode, nlocal, 1);
+            return wrap<int>(type.data(), exec_space, _mode, nlocal, 1);
         } else {
             auto type = (atomKK->k_type).view<LMPDeviceType>();
-            return wrap<int>(type.data(), location, _mode, nlocal, 1);
+            return wrap<int>(type.data(), exec_space, _mode, nlocal, 1);
         }
     }
 
-    auto get_tag(AccessLocation location)
+    auto get_tag(const ExecutionSpace exec_space)
     {
         int nlocal = atom->nlocal;
-        if (location == kOnHost) {
+        if (exec_space == kOnHost) {
             auto tag = (atomKK->k_tag).view<LMPHostType>();
-            return wrap<int>(tag.data(), location, _mode, nlocal, 1);
+            return wrap<int>(tag.data(), exec_space, _mode, nlocal, 1);
         } else {
             auto tag = (atomKK->k_tag).view<LMPDeviceType>();
-            return wrap<tagint>(tag.data(), location, _mode, nlocal, 1);
+            return wrap<tagint>(tag.data(), exec_space, _mode, nlocal, 1);
         }
     }
 
@@ -214,7 +213,7 @@ public:
 
     template <typename T>
     DLManagedTensorPtr wrap(
-        void* data, const AccessLocation location, const AccessMode mode, const int num_particles,
+        void* data, const ExecutionSpace location, const AccessMode mode, const int num_particles,
         int64_t size2 = 1, uint64_t offset = 0, uint64_t stride1_offset = 0
     )
     {
@@ -260,7 +259,6 @@ public:
 
 private:
     ExternalUpdater _update_callback;
-    AccessLocation _location;
     AccessMode _mode;
     unsigned int _kokkos_mode;
 };
