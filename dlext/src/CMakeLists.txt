@@ -1,3 +1,3 @@
 target_sources(${PROJECT_NAME}
-  PUBLIC Sampler.cpp
+    PRIVATE LAMMPSView.cpp Sampler.cpp
 )
