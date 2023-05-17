@@ -5,7 +5,7 @@
 
 # API exposed to Python
 from .dlpack_extension import (
-    AccessLocation,
+    ExecutionSpace,
     AccessMode,
     DLExtSampler,
 )

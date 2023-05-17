@@ -123,27 +123,6 @@ public:
         forward_data(_update_callback, execution_space, _mode, update->ntimestep);
     }
 
-/*  The templated version leads to compiling errors in lammps_dlext.cpp with the instantiation
-         .def("get_positions",  &PySampler::get_positions<kOnDevice>)
-         #ifdef KOKKOS_ENABLE_CUDA
-         .def("get_positions",  &PySampler::get_positions<kOnHost>)
-         #endif
-    "error: no matching function for call to ‘pybind11::class_<LAMMPS_NS::dlext::Sampler<pybind11::function,
-        Kokkos::Cuda> >::def(const char [14], <unresolved overloaded function type>)"
-
-    template <AccessLocation requestedLocation>
-    auto get_positions()
-    {
-        int nlocal = atom->nlocal;
-        if (location == kOnHost) {
-           auto x = (atomKK->k_x).view<LMPHostType>();
-           return wrap<Scalar3>(x.data(), location, _mode, nlocal, 3);
-        } else {
-           auto x = (atomKK->k_x).view<LMPDeviceType>();
-           return wrap<Scalar3>(x.data(), location, _mode, nlocal, 3);
-        }
-    }
-*/
     auto get_positions(const ExecutionSpace exec_space)
     {
         int nlocal = atom->nlocal;
