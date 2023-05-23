@@ -16,7 +16,7 @@
 
 #include <memory>
 
-namespace cxx11utils
+namespace cxx11
 {
 
 template <typename T>
@@ -33,6 +33,6 @@ std::unique_ptr<T> make_unique(Args&&... args)
     return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-}  // namespace cxx11utils
+}  // namespace cxx11
 
 #endif  // CXX11_UTILS_H_

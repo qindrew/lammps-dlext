@@ -6,6 +6,15 @@
 # API exposed to Python
 from .dlpack_extension import (
     ExecutionSpace,
-    AccessMode,
-    DLExtSampler,
+    FixDLExt,
+    LAMMPSView,
+    forces,
+    images,
+    masses,
+    positions,
+    tags,
+    types,
+    velocities,
 )
+
+del dlpack_extension

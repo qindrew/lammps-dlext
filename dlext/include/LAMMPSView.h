@@ -4,7 +4,10 @@
 #ifndef LAMMPSVIEW_H_
 #define LAMMPSVIEW_H_
 
-#include "DLExt.h"
+#include "atom_masks.h"
+#include "cxx11utils.h"
+#include "dlpack/dlpack.h"
+#include "lammps.h"
 
 namespace LAMMPS_NS
 {
@@ -17,6 +20,10 @@ const auto kOnHost = ExecutionSpace::Host;
 const auto kOnDevice = ExecutionSpace::Device;
 
 // } // Aliases
+
+constexpr unsigned int DLEXT_MASK = (
+    X_MASK | V_MASK | F_MASK | TAG_MASK | TYPE_MASK | MASK_MASK | IMAGE_MASK
+);
 
 //! LAMMPSView is a wrapper around a LAMMPS* instance which provides convenience methods
 //! to retrieve some of the system information.
