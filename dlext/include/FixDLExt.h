@@ -35,14 +35,13 @@ class DEFAULT_VISIBILITY FixDLExt : public Fix {
 public:
     //! Constructor
     FixDLExt(LAMMPS* lmp, int narg, char** arg);
-    ~FixDLExt();
 
     int setmask() override;
     void post_force(int) override;
     void set_callback(DLExtCallback& cb);
 
 private:
-    LAMMPSView* view;
+    std::unique_ptr<LAMMPSView> view;
     DLExtCallback callback = [](TimeStep) { };
 };
 

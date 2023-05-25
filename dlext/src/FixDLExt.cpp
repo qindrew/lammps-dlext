@@ -26,17 +26,12 @@ FixDLExt::FixDLExt(LAMMPS* lmp, int narg, char** arg)
     if (bad_args)
         error->all(FLERR, "Illegal fix external command");
 
-    view = new LAMMPSView(lmp);
+    view = cxx11::make_unique<LAMMPSView>(lmp);
     kokkosable = view->has_kokkos_cuda_enabled();
     atomKK = dynamic_cast<AtomKokkos*>(atom);
     execution_space = (on_host || !kokkosable) ? kOnHost : kOnDevice;
     datamask_read = EMPTY_MASK;
     datamask_modify = EMPTY_MASK;
-}
-
-FixDLExt::~FixDLExt()
-{
-    delete view;
 }
 
 int FixDLExt::setmask() { return FixConst::POST_FORCE; }
