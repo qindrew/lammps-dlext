@@ -5,6 +5,7 @@
 #define LAMMPS_DLPACK_EXTENSION_H_
 
 #include "LAMMPSView.h"
+#include "atom.h"
 
 #ifdef LMP_KOKKOS
 #include "KOKKOS/atom_kokkos.h"

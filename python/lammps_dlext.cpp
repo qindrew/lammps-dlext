@@ -6,11 +6,12 @@
 
 #include <pybind11/stl.h>
 
+using namespace LAMMPS_NS;
 using namespace LAMMPS_NS::dlext;
 
 namespace py = pybind11;
 
-LAMMPS* to_lammps_ptr(py::object lmp)
+LAMMPS_NS::LAMMPS* to_lammps_ptr(py::object lmp)
 {
     auto pyptr = lmp.attr("lmp");
     auto pyaddr = pyptr.attr("value");

@@ -4,13 +4,16 @@
 #include "FixDLExt.h"
 
 #include "accelerator_kokkos.h"
+#include "error.h"
 #include "update.h"
 
-using namespace LAMMPS_NS::dlext;
+namespace LAMMPS_NS
+{
+namespace dlext
+{
 
 FixDLExt::FixDLExt(LAMMPS* lmp, int narg, char** arg)
     : Fix(lmp, narg, arg)
-    , LAMMPSView(lmp)
 {
     auto on_host = true;
     auto bad_args = (narg != 3 || narg != 5);
@@ -23,13 +26,22 @@ FixDLExt::FixDLExt(LAMMPS* lmp, int narg, char** arg)
     if (bad_args)
         error->all(FLERR, "Illegal fix external command");
 
-    kokkosable = view.has_kokkos_cuda_enabled();
+    view = new LAMMPSView(lmp);
+    kokkosable = view->has_kokkos_cuda_enabled();
     atomKK = dynamic_cast<AtomKokkos*>(atom);
     execution_space = (on_host || !kokkosable) ? kOnHost : kOnDevice;
     datamask_read = EMPTY_MASK;
     datamask_modify = EMPTY_MASK;
 }
 
+FixDLExt::~FixDLExt()
+{
+    delete view;
+}
+
 int FixDLExt::setmask() { return FixConst::POST_FORCE; }
 void FixDLExt::post_force(int) { callback(update->ntimestep); }
 void FixDLExt::set_callback(DLExtCallback& cb) { callback = cb; }
+
+} // dlext
+} // LAMMPS_NS
