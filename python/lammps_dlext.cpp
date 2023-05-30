@@ -25,7 +25,6 @@ void export_LAMMPSView(py::module& m)
         .def(py::init([](py::object lmp) {
             return cxx11::make_unique<LAMMPSView>(to_lammps_ptr(lmp));
         }))
-        .def("device_type", &LAMMPSView::device_type)
         .def("has_kokkos_cuda_enabled", &LAMMPSView::has_kokkos_cuda_enabled)
         .def("local_particle_number", &LAMMPSView::local_particle_number)
         .def("global_particle_number", &LAMMPSView::global_particle_number)

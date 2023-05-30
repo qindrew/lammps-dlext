@@ -57,6 +57,10 @@ function(map_version_to_tag version)
     set(LAMMPS_tag "${CMAKE_MATCH_1}" PARENT_SCOPE)
 endfunction()
 
+#    copy_target_property
+#
+# Given a source target `src` and a destination target `dst`, reads the value of the
+# `property` in `src` and if found, sets it in `dst`.
 function(copy_target_property src dst property)
     get_target_property(var ${src} ${property})
     if(NOT ("${var}" STREQUAL "var-NOTFOUND"))
@@ -64,6 +68,11 @@ function(copy_target_property src dst property)
     endif()
 endfunction()
 
+#    copy_target_property_fallback
+#
+# Given a source target `src` and a destination target `dst`, reads the value of the
+# `property` in `src` and only if not found, sets it in `dst` using the corresponding
+# value from the configuration `config` provided.
 function(copy_target_property_fallback src dst property config)
     get_target_property(var ${src} ${property})
     if("${var}" STREQUAL "var-NOTFOUND")
@@ -72,6 +81,11 @@ function(copy_target_property_fallback src dst property config)
     endif()
 endfunction()
 
+#    copy_target_property
+#
+# Given a source target `src` and a destination target `dst`, finds all the
+# IMPORTED_CONFIGURATIONS in `src` and for each of them tries to extract the value of the
+# corresponding `property` in `src`, and if found, sets it in `dst`.
 function(copy_target_property_configs src dst property)
     get_target_property(configs ${src} IMPORTED_CONFIGURATIONS)
     list(LENGTH configs nconfigs)
@@ -129,6 +143,12 @@ message(STATUS "Found LAMMPS at ${LAMMPS_ROOT} (version ${LAMMPS_VERSION})")
 map_version_to_tag(${LAMMPS_VERSION})
 fetch_lammps(${LAMMPS_tag})
 
+if(TARGET LAMMPS::mpi_stubs)  # LAMMPS was built without MPI support
+    target_include_directories(LAMMPS::mpi_stubs SYSTEM INTERFACE
+        "${lammps_SOURCE_DIR}/src/STUBS"
+    )
+endif()
+
 add_library(dlext::lammps SHARED IMPORTED)
 
 foreach(property "IMPORTED_LOCATION" "IMPORTED_SONAME")
@@ -140,13 +160,8 @@ copy_target_property(LAMMPS::lammps dlext::lammps INTERFACE_LINK_LIBRARIES)
 
 target_include_directories(dlext::lammps INTERFACE "${lammps_SOURCE_DIR}/src")
 
-if(TARGET LAMMPS::mpi_stubs)
-    target_include_directories(LAMMPS::mpi_stubs SYSTEM INTERFACE
-        "${lammps_SOURCE_DIR}/src/STUBS"
-    )
-endif()
-
 find_package(Kokkos QUIET)
 if(Kokkos_FOUND)
     message(STATUS "Kokkos support has been enabled (version ${Kokkos_VERSION})")
+    target_include_directories(dlext::lammps INTERFACE "${lammps_SOURCE_DIR}/src/KOKKOS")
 endif()

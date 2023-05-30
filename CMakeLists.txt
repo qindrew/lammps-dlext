@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16..3.26)
 
 ## Setup project
-project(dlext LANGUAGES C CXX)
+project(dlext LANGUAGES CXX)
 
 set(PROJECT_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_MODULE_PATH})
@@ -35,13 +35,14 @@ target_include_directories(${PROJECT_NAME} PUBLIC include)
 target_link_libraries(${PROJECT_NAME} PUBLIC dlext::lammps dlpack::dlpack)
 if(Kokkos_FOUND)
     target_link_libraries(${PROJECT_NAME} PUBLIC Kokkos::kokkos)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC LMP_KOKKOS)
 endif()
 
 add_subdirectory(dlext)
 
 ## Install
 install(TARGETS ${PROJECT_NAME}
-    DESTINATION ${CMAKE_INSTALL_PREFIX}
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
 install(DIRECTORY include/

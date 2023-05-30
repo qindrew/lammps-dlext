@@ -17,4 +17,7 @@ from .dlpack_extension import (
     velocities,
 )
 
+kOnDevice = ExecutionSpace.OnDevice
+kOnHost = ExecutionSpace.OnHost
+
 del dlpack_extension
