@@ -1,62 +1,62 @@
-cmake_minimum_required(VERSION 3.16..3.22)
+cmake_minimum_required(VERSION 3.16..3.26)
 
-# Set-up project
+## Setup project
 project(dlext LANGUAGES C CXX)
-
-# Try finding LAMMPS first from the current environment
 
 set(PROJECT_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_MODULE_PATH})
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-find_package(LAMMPS REQUIRED)
-
-# find Kokkos package
-find_package(Kokkos REQUIRED)
-
-if(NOT LAMMPS_INSTALL_PREFIX)
-    set(LAMMPS_INSTALL_PREFIX ${LAMMPS_ROOT})
-endif()
-message(STATUS "Found LAMMPS at ${LAMMPS_ROOT}")
-
-if(NOT LAMMPS_LIBRARIES)
-    set(LAMMPS_LIBRARIES LAMMPS::_lammps)
-endif()
-
+# Setup dependencies and extend LAMMPS interface
 include(GNUInstallDirs)
 include("${PROJECT_MODULE_PATH}/FetchCPM.cmake")
 include("${PROJECT_MODULE_PATH}/FetchDLPack.cmake")
+include("${PROJECT_MODULE_PATH}/FindLAMMPSTools.cmake")
 
-# LAMMPS must be built as a shared library
-if(NOT BUILD_SHARED_LIBS)
-    message(SEND_ERROR "Plugins cannot be built against a statically compiled LAMMPS")
+find_package(Kokkos QUIET)
+if(Kokkos_FOUND)
+    message(STATUS "Kokkos support has been enabled (version ${Kokkos_VERSION})")
+endif()
+
+if(NOT LAMMPS_INSTALL_PREFIX)
+    get_filename_component(LAMMPS_INSTALL_PREFIX "${LAMMPS_ROOT}/../../.." ABSOLUTE)
 endif()
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX ${LAMMPS_INSTALL_PREFIX} CACHE PATH "" FORCE)
 endif()
 
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
 message(STATUS "Install plugin to: " ${CMAKE_INSTALL_PREFIX})
 
-# Create the main library
+## Create the main library
 add_library(${PROJECT_NAME} SHARED "")
 
-target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_14)
+if(Kokkos_FOUND AND (${Kokkos_VERSION} VERSION_GREATER_EQUAL "3.3.0"))
+    target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_14)
+else()
+    target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_11)
+endif()
 target_include_directories(${PROJECT_NAME} PUBLIC include)
-target_link_libraries(${PROJECT_NAME} PUBLIC ${LAMMPS_LIBRARIES} dlpack::dlpack Kokkos::kokkos)
+target_link_libraries(${PROJECT_NAME} PUBLIC LAMMPS::lammps dlpack::dlpack)
+if(Kokkos_FOUND)
+    target_link_libraries(${PROJECT_NAME} PUBLIC Kokkos::kokkos)
+endif()
 
 add_subdirectory(dlext)
 
-# Install
+## Install
 install(TARGETS ${PROJECT_NAME}
-    DESTINATION ${LAMMPS_ROOT}
+    DESTINATION ${CMAKE_INSTALL_PREFIX}
 )
 
 install(DIRECTORY include/
-    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/lammps/${PROJECT_NAME}"
+    DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}"
     FILES_MATCHING PATTERN "*.h"
 )
 
-# Create python module
-add_subdirectory(python)
+## Create python module
+option(BUILD_PYTHON_WRAPPER "Build Python wrapper" ON)
+
+if(BUILD_PYTHON_WRAPPER)
+    add_subdirectory(python)
+endif()
