@@ -140,6 +140,12 @@ copy_target_property(LAMMPS::lammps dlext::lammps INTERFACE_LINK_LIBRARIES)
 
 target_include_directories(dlext::lammps INTERFACE "${lammps_SOURCE_DIR}/src")
 
+if(TARGET LAMMPS::mpi_stubs)
+    target_include_directories(LAMMPS::mpi_stubs SYSTEM INTERFACE
+        "${lammps_SOURCE_DIR}/src/STUBS"
+    )
+endif()
+
 find_package(Kokkos QUIET)
 if(Kokkos_FOUND)
     message(STATUS "Kokkos support has been enabled (version ${Kokkos_VERSION})")
