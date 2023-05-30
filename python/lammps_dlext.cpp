@@ -4,7 +4,7 @@
 #include "FixDLExt.h"
 #include "PyDLExt.h"
 
-#include <pybind11/stl.h>
+#include "pybind11/functional.h"
 
 using namespace LAMMPS_NS;
 using namespace LAMMPS_NS::dlext;

@@ -4,6 +4,8 @@ set_python_module_path()  # sets variable LAMMPS_Python_PATH
 
 set(pybind11_MODULE_NAME "dlpack_extension")
 
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION OFF)
+
 pybind11_add_module(${pybind11_MODULE_NAME} MODULE "")
 
 target_compile_features(${pybind11_MODULE_NAME} PRIVATE cxx_std_11)
