@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16..3.26)
 
 ## Setup project
-project(dlext LANGUAGES CXX)
+project(dlext LANGUAGES C CXX)
 
 set(PROJECT_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/Modules")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_MODULE_PATH})
@@ -21,7 +21,7 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX ${LAMMPS_INSTALL_PREFIX} CACHE PATH "" FORCE)
 endif()
 
-message(STATUS "Install plugin to: " ${CMAKE_INSTALL_PREFIX})
+message(STATUS "Install plugin to: ${CMAKE_INSTALL_PREFIX}")
 
 ## Create the main library
 add_library(${PROJECT_NAME} SHARED "")

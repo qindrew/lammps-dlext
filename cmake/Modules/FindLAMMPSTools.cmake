@@ -31,11 +31,44 @@ function(fetch_lammps tag)
     endif()
 endfunction()
 
-#     map_version_to_tag
+#     find_executable
+#
+# Looks for the IMPORTED_LOCATION of the first available IMPORTED_LOCATION_<config>
+# for the given target and sets a variable `varname` on the parent scope.
+function(find_executable target varname)
+    get_target_property(var ${target} IMPORTED_LOCATION)
+    if("${var}" STREQUAL "var-NOTFOUND")
+        get_target_property(configs ${target} IMPORTED_CONFIGURATIONS)
+        list(GET configs 0 config)
+        get_target_property(var ${target} "IMPORTED_LOCATION_${config}")
+    endif()
+    set(${varname} ${var} PARENT_SCOPE)
+endfunction()
+
+#     get_lammps_tag
 #
 # Given a LAMMPS `version` as reported to CMake or Python, sets `LAMMPS_tag` in the
 # parent scope to the latest git tag matching this version within the LAMMPS repo.
-function(map_version_to_tag version)
+function(get_lammps_tag version)
+    # Try to get the git tag or commit directly from LAMMPS' help
+    execute_process(
+        COMMAND ${LAMMPS_EXECUTABLE} -h
+        OUTPUT_VARIABLE LAMMPS_help
+        ERROR_QUIET
+    )
+
+    string(REGEX MATCH "Git info [^ ]+ / ([^)]+)" _ "${LAMMPS_help}")
+
+    set(is_missing
+        (("${CMAKE_MATCH_1}" STREQUAL "") OR ("${CMAKE_MATCH_1}" STREQUAL "(unknown)"))
+    )
+    if(NOT ${is_missing})
+        set(LAMMPS_tag "${CMAKE_MATCH_1}" PARENT_SCOPE)
+        return()
+    endif()
+
+    # If we're unable to find it we search for the last tag that matches
+    # the provided `version`.
     set(MONTHS _ Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)
 
     string(REGEX MATCH "([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9]).*" _ "${version}")
@@ -140,7 +173,8 @@ endfunction()
 find_package(LAMMPS REQUIRED)
 message(STATUS "Found LAMMPS at ${LAMMPS_ROOT} (version ${LAMMPS_VERSION})")
 
-map_version_to_tag(${LAMMPS_VERSION})
+find_executable(LAMMPS::lmp "LAMMPS_EXECUTABLE")
+get_lammps_tag(${LAMMPS_VERSION})
 fetch_lammps(${LAMMPS_tag})
 
 if(TARGET LAMMPS::mpi_stubs)  # LAMMPS was built without MPI support
