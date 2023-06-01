@@ -8,7 +8,7 @@
 #include "atom.h"
 
 #ifdef LMP_KOKKOS
-#include "KOKKOS/atom_kokkos.h"
+#include "atom_kokkos.h"
 #endif
 
 #include <type_traits>
@@ -153,7 +153,7 @@ inline int64_t size(const LAMMPSView& view, Property)
 {
     return view.local_particle_number();
 }
-inline int64_t size(const LAMMPSView& view, Masses) { return view.atom_ptr()->ntypes; }
+inline int64_t size(const LAMMPSView& view, Masses) { return view.atom_ptr()->ntypes + 1; }
 
 template <typename Property>
 inline int64_t size(const LAMMPSView& view, Property, SecondDim)
