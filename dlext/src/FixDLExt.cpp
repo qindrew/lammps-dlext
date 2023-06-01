@@ -16,15 +16,15 @@ FixDLExt::FixDLExt(LAMMPS* lmp, int narg, char** arg)
     : Fix(lmp, narg, arg)
 {
     auto on_host = true;
-    auto bad_args = (narg != 3 || narg != 5);
+    auto bad_args = narg != 3 && narg != 5;
     if (narg == 5) {
-        auto on_device = (strcmp(arg[4], "device") == 0);
-        on_host = (strcmp(arg[4], "host") == 0);
-        bad_args |= (strcmp(arg[3], "space") != 0);
-        bad_args |= (!on_host || !on_device);
+        auto on_device = strcmp(arg[4], "device") == 0;
+        on_host = strcmp(arg[4], "host") == 0;
+        bad_args |= strcmp(arg[3], "space") != 0;
+        bad_args |= !on_host && !on_device;
     }
     if (bad_args)
-        error->all(FLERR, "Illegal fix external command");
+        error->all(FLERR, "Illegal fix dlext command");
 
     view = cxx11::make_unique<LAMMPSView>(lmp);
     kokkosable = view->has_kokkos_cuda_enabled();
