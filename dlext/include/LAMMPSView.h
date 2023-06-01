@@ -7,8 +7,7 @@
 #include "atom_masks.h"
 #include "cxx11utils.h"
 #include "dlpack/dlpack.h"
-#include "lammps.h"
-#include "KOKKOS/kokkos_type.h"
+#include "pointers.h"
 
 namespace LAMMPS_NS
 {
