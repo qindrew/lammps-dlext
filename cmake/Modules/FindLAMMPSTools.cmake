@@ -53,18 +53,21 @@ function(get_lammps_tag version)
     # Try to get the git tag or commit directly from LAMMPS' help
     execute_process(
         COMMAND ${LAMMPS_EXECUTABLE} -h
+        RESULT_VARIABLE exit_code
         OUTPUT_VARIABLE LAMMPS_help
         ERROR_QUIET
     )
 
-    string(REGEX MATCH "Git info [^ ]+ / ([^)]+)" _ "${LAMMPS_help}")
+    if(exit_code EQUAL 0)
+        string(REGEX MATCH "Git info [^ ]+ / ([^)]+)" _ "${LAMMPS_help}")
 
-    set(is_missing
-        (("${CMAKE_MATCH_1}" STREQUAL "") OR ("${CMAKE_MATCH_1}" STREQUAL "(unknown)"))
-    )
-    if(NOT ${is_missing})
-        set(LAMMPS_tag "${CMAKE_MATCH_1}" PARENT_SCOPE)
-        return()
+        if(
+            (NOT ("${CMAKE_MATCH_1}" STREQUAL "")) AND
+            (NOT ("${CMAKE_MATCH_1}" STREQUAL "(unknown)"))
+        )
+            set(LAMMPS_tag "${CMAKE_MATCH_1}" PARENT_SCOPE)
+            return()
+        endif()
     endif()
 
     # If we're unable to find it we search for the last tag that matches
