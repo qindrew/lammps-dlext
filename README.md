@@ -38,11 +38,6 @@ To test the installation of the LAMMPS python module
 python3 -c "from lammps import lammps; p = lammps()"
 ```
 
-The following steps are needed to compile `lammpds-dlext` because the header files are not copied into the LAMMPS installation folder:
-* Copy the folder ```$LMP_PATH/src/fmt``` into the installation folder ```include/lammps/fmt```
-* Copy ```$LMP_PATH/src/fix_external.h``` to ```include/lammps``` as Sampler needs to be derived from a non-abstract Fix class rather than the abstract Fix
-* Copy several key headers from ```$LMP_PATH/src/KOKKOS``` (e.g. kokkos_type.h, atom_kokkos.h, memory_kokkos.h, comm_kokkos.h) into ```include/lammps/KOKKOS```
-
 You can check if `lammps` is listed in the `pysages3` env via `pip list`.
 
 Build LAMMPS dlext (this package)
@@ -58,12 +53,13 @@ Build LAMMPS dlext (this package)
   mkdir build && cd build
 
   export SITE_PACKAGES=`python3 -c "import site; print(site.getsitepackages()[0])"`
-  cmake ../ -DCMAKE_INSTALL_PREFIX="$SITE_PACKAGES/lammps" -DKokkos_ROOT="$SITE_PACKAGES/../../../lib64/cmake/Kokkos"
+  cmake ../ -DCMAKE_INSTALL_PREFIX="$SITE_PACKAGES/lammps" -DKokkos_ROOT="$SITE_PACKAGES/../../../lib64/cmake/Kokkos" -DLAMMPS_ROOT=/path/to/lammps/top_level/folder
   make -j4
   make install
 ```
 
 The path to `Kokkos_ROOT` is needed to compile with [the KOKKOS package out of tree] (https://github.com/kokkos/kokkos/wiki/Compiling).
+The path to `LAMMPS_ROOT` is needed to have the header files for LAMMPS and the KOKKOS package.
 
 If the build is successful, you will see the `dlext` module installed inside the `lammps` package.
 
