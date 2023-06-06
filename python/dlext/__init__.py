@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+# This file is part of `lammps-dlext`, see LICENSE.md
+
+# flake8:noqa:F401
+
+# API exposed to Python
+from .dlpack_extension import (
+    ExecutionSpace,
+    FixDLExt,
+    LAMMPSView,
+    forces,
+    images,
+    masses,
+    positions,
+    tags,
+    types,
+    velocities,
+)
+
+kOnDevice = ExecutionSpace.OnDevice
+kOnHost = ExecutionSpace.OnHost
+
+del dlpack_extension
