@@ -16,7 +16,7 @@ LAMMPSView::LAMMPSView(LAMMPS_NS::LAMMPS* lmp)
 #ifdef LMP_KOKKOS
     if (has_kokkos_cuda_enabled()) {
         // Since there's is no MASS_MASK, we need to make sure
-        // they are available on the device.
+        // masses are available on the device.
         atom_kokkos_ptr()->k_mass.sync_device();
     }
 #endif
