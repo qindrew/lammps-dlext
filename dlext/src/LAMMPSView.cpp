@@ -12,7 +12,15 @@ namespace dlext
 
 LAMMPSView::LAMMPSView(LAMMPS_NS::LAMMPS* lmp)
     : Pointers(lmp)
-{ }
+{
+#ifdef LMP_KOKKOS
+    if (has_kokkos_cuda_enabled()) {
+        // Since there's is no MASS_MASK, we need to make sure
+        // masses are available on the device.
+        atom_kokkos_ptr()->k_mass.sync_device();
+    }
+#endif
+}
 
 Atom* LAMMPSView::atom_ptr() const { return lmp->atom; }
 AtomKokkos* LAMMPSView::atom_kokkos_ptr() const { return lmp->atomKK; }
