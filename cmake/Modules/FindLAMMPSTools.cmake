@@ -45,7 +45,18 @@ function(find_executable target varname)
     set(${varname} ${var} PARENT_SCOPE)
 endfunction()
 
-#     get_lammps_tag
+#     find_lammps_cxx_compiler(path)
+#
+# Look for the  `nvcc_wrapper` shipped by lammps within the specified `path` and,
+# if found, set its location to `LAMMPS_CXX_COMPILER` in the parent scope.
+function(find_lammps_cxx_compiler path)
+    get_filename_component(NVCC_WRAPPER "${path}/nvcc_wrapper" ABSOLUTE)
+    if(EXISTS ${NVCC_WRAPPER})
+        set(LAMMPS_CXX_COMPILER ${NVCC_WRAPPER} PARENT_SCOPE)
+    endif()
+endfunction()
+
+#     get_lammps_tag(tag version)
 #
 # Given a LAMMPS `version` as reported to CMake or Python, sets `LAMMPS_tag` in the
 # parent scope to the latest git tag matching this version within the LAMMPS repo.
@@ -91,6 +102,15 @@ function(get_lammps_tag version)
     string(REGEX MATCH ".*/(.+)$" _ "${git_tags}")
 
     set(LAMMPS_tag "${CMAKE_MATCH_1}" PARENT_SCOPE)
+endfunction()
+
+function(append_paths list)
+    list(POP_FRONT ARGV)
+    foreach(file ${ARGV})
+        get_filename_component(path ${file} ABSOLUTE)
+        set(${list} ${${list}} ${path})
+    endforeach()
+    set(${list} ${${list}} PARENT_SCOPE)
 endfunction()
 
 #    copy_target_property
@@ -144,8 +164,7 @@ endfunction()
 #     set_python_module_path
 #
 # Tries finding the path where the python lammps module is installed and sets the
-# variable `LAMMPS_Python_PATH` to that path, otherwise `LAMMPS_Python_PATH` will
-# be empty.
+# variable `PYLAMMPS_PATH` to that path, otherwise `PYLAMMPS_PATH` will be empty.
 function(set_python_module_path)
     find_package(Python QUIET COMPONENTS Interpreter)
     if(NOT (Python_FOUND AND Python_Interpreter_FOUND))
@@ -153,7 +172,7 @@ function(set_python_module_path)
             "Could not find Python interpreter, make sure it is installed and enabled"
         )
     endif()
-    set(FIND_LAMMPS_SCRIPT "
+    set(find_lammps_script "
 from __future__ import print_function;
 import os
 try:
@@ -162,11 +181,26 @@ try:
 except:
     print('', end='')"
     )
-    execute_process(
-        COMMAND ${Python_EXECUTABLE} -c "${FIND_LAMMPS_SCRIPT}"
-        OUTPUT_VARIABLE LAMMPS_Python_PATH
+    set(find_liblammps_script "
+from __future__ import print_function;
+import os
+try:
+    import lammps
+    lmp = lammps.lammps(cmdargs='-screen none'.split())
+    print(lmp.lib._name, end='')
+except:
+    print('', end='')"
     )
-    set(LAMMPS_Python_PATH "${LAMMPS_Python_PATH}" PARENT_SCOPE)
+    execute_process(
+        COMMAND ${Python_EXECUTABLE} -c "${find_lammps_script}"
+        OUTPUT_VARIABLE PYLAMMPS_PATH
+    )
+    set(PYLAMMPS_PATH "${PYLAMMPS_PATH}" PARENT_SCOPE)
+    execute_process(
+        COMMAND ${Python_EXECUTABLE} -c "${find_liblammps_script}"
+        OUTPUT_VARIABLE PYLAMMPS_LIBRARY_PATH
+    )
+    set(PYLAMMPS_LIBRARY_PATH "${PYLAMMPS_LIBRARY_PATH}" PARENT_SCOPE)
 endfunction()
 
 
@@ -177,8 +211,24 @@ find_package(LAMMPS REQUIRED)
 message(STATUS "Found LAMMPS at ${LAMMPS_ROOT} (version ${LAMMPS_VERSION})")
 
 find_executable(LAMMPS::lmp "LAMMPS_EXECUTABLE")
+find_lammps_cxx_compiler("${LAMMPS_EXECUTABLE}/..")
 get_lammps_tag(${LAMMPS_VERSION})
 fetch_lammps(${LAMMPS_tag})
+
+if(NOT CMAKE_BUILD_TYPE)
+    if(${LAMMPS_VERSION} GREATER 20190618)
+        set(CMAKE_BUILD_TYPE Release CACHE STRING "Type of build" FORCE)
+    else()
+        set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Type of build" FORCE)
+    endif()
+endif()
+
+set(CMAKE_CXX_EXTENSIONS OFF CACHE FILEPATH "Use compiler extensions")
+if(LAMMPS_CXX_COMPILER)
+    set(CMAKE_CXX_COMPILER ${LAMMPS_CXX_COMPILER} CACHE FILEPATH "C++ compiler")
+endif()
+
+enable_language(CXX)
 
 if(TARGET LAMMPS::mpi_stubs)  # LAMMPS was built without MPI support
     target_include_directories(LAMMPS::mpi_stubs SYSTEM INTERFACE
@@ -186,19 +236,21 @@ if(TARGET LAMMPS::mpi_stubs)  # LAMMPS was built without MPI support
     )
 endif()
 
-add_library(dlext::lammps SHARED IMPORTED)
+if(NOT LAMMPS_INSTALL_PREFIX)
+    get_filename_component(LAMMPS_INSTALL_PREFIX "${LAMMPS_ROOT}/../../.." ABSOLUTE)
+endif()
 
-foreach(property "IMPORTED_LOCATION" "IMPORTED_SONAME")
-    copy_target_property(LAMMPS::lammps dlext::lammps ${property})
-    copy_target_property_configs(LAMMPS::lammps dlext::lammps ${property})
-endforeach()
-copy_target_property(LAMMPS::lammps dlext::lammps INTERFACE_COMPILE_DEFINITIONS)
-copy_target_property(LAMMPS::lammps dlext::lammps INTERFACE_LINK_LIBRARIES)
+add_library(LAMMPS_src INTERFACE)
 
-target_include_directories(dlext::lammps INTERFACE "${lammps_SOURCE_DIR}/src")
+target_include_directories(LAMMPS_src INTERFACE "${lammps_SOURCE_DIR}/src")
 
 find_package(Kokkos QUIET)
 if(Kokkos_FOUND)
     message(STATUS "Kokkos support has been enabled (version ${Kokkos_VERSION})")
-    target_include_directories(dlext::lammps INTERFACE "${lammps_SOURCE_DIR}/src/KOKKOS")
+    target_include_directories(LAMMPS_src INTERFACE "${lammps_SOURCE_DIR}/src/KOKKOS")
+else()
+    message(STATUS
+        "Kokkos support is not enabled. If you built LAMMPS with Kokkos,"
+        "make sure that CMake if able to find it by providing the Kokkos_ROOT."
+    )
 endif()

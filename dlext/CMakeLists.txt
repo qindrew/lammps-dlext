@@ -1,9 +1,8 @@
 add_subdirectory(src)
 
-target_include_directories(${PROJECT_NAME} PUBLIC include)
+set("${PROJECT_NAME}_SOURCE_FILES" ${${PROJECT_NAME}_SOURCE_FILES} PARENT_SCOPE)
 
-# this openmpi-x86_64 path is for my fedora box -- comment out for midway3
-target_include_directories(${PROJECT_NAME} PUBLIC /usr/include/openmpi-x86_64)
+target_include_directories(${PROJECT_NAME}_headers INTERFACE include)
 
 install(DIRECTORY include/
     DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/lammps/${PROJECT_NAME}"
