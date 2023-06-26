@@ -10,7 +10,11 @@ function(fetch_dlpack ver)
     add_subdirectory(${dlpack_SOURCE_DIR} "${PROJECT_BINARY_DIR}/extern/dlpack")
 endfunction()
 
-find_package(dlpack 0.5 QUIET)
+option(FETCH_DLPACK "Fetch DLPack without looking for it locally" OFF)
+
+if(NOT FETCH_DLPACK)
+    find_package(dlpack 0.5 QUIET)
+endif()
 
 if(dlpack_FOUND)
     message(STATUS "Found dlpack: ${dlpack_DIR} (version ${dlpack_VERSION})")

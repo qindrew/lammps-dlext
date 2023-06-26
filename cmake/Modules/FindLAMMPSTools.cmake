@@ -9,6 +9,24 @@ find_package(Git REQUIRED)
 
 set(LAMMPS_URL "https://github.com/lammps/lammps.git")
 
+if(NOT LAMMPS_ROOT)
+    if(DEFINED ENV{LAMMPS_ROOT})
+        set(LAMMPS_ROOT $ENV{LAMMPS_ROOT})
+    elseif(CMAKE_PREFIX_PATH)
+        find_path(LAMMPS_ROOT
+            NAMES LAMMPS_Targets.cmake
+            HINTS ${CMAKE_PREFIX_PATH}
+            PATH_SUFFIXES LAMMPS
+        )
+        if("${LAMMPS_ROOT}" STREQUAL "LAMMPS_ROOT-NOTFOUND")
+            message(FATAL_ERROR
+                "Unable to find LAMMPS. Try setting the CMake "
+                "variables LAMMPS_ROOT or CMAKE_PREFIX_PATH."
+            )
+        endif()
+    endif()
+endif()
+
 
 # Utility functions
 # -----------------
@@ -56,7 +74,7 @@ function(find_lammps_cxx_compiler path)
     endif()
 endfunction()
 
-#     get_lammps_tag(tag version)
+#     get_lammps_tag(version)
 #
 # Given a LAMMPS `version` as reported to CMake or Python, sets `LAMMPS_tag` in the
 # parent scope to the latest git tag matching this version within the LAMMPS repo.
@@ -104,6 +122,35 @@ function(get_lammps_tag version)
     set(LAMMPS_tag "${CMAKE_MATCH_1}" PARENT_SCOPE)
 endfunction()
 
+#     get_lammps_version(path)
+#
+# Tries loading the LAMMPSConfigVersion.cmake from within `path`,
+# and sets LAMMPS_VERSION in the parent scope.
+function(get_lammps_version path)
+    if(EXISTS "${path}/LAMMPSConfigVersion.cmake")
+        include("${path}/LAMMPSConfigVersion.cmake")
+    endif()
+    set(LAMMPS_VERSION "${PACKAGE_VERSION}" PARENT_SCOPE)
+endfunction()
+
+#     find_lammps()
+#
+# Macro equivalent to find_package(LAMMPS QUIET), but avoids looking for MPI,
+# which is performed separately. It also looks for the NVCC wrapper that
+# comes with LAMMPS and tries to find an appropriate git tag matching the
+# LAMMPS version.
+macro(find_lammps)
+    include("${LAMMPS_ROOT}/LAMMPS_Targets.cmake")
+    find_executable(LAMMPS::lmp "LAMMPS_EXECUTABLE")
+    find_lammps_cxx_compiler("${LAMMPS_EXECUTABLE}/..")
+    get_lammps_version(${LAMMPS_ROOT})
+    get_lammps_tag(${LAMMPS_VERSION})
+endmacro()
+
+#     append_paths(list)
+#
+# Given a list and any number of file names, appends to the list
+# the absolute paths to the provided files.
 function(append_paths list)
     list(POP_FRONT ARGV)
     foreach(file ${ARGV})
@@ -186,7 +233,7 @@ from __future__ import print_function;
 import os
 try:
     import lammps
-    lmp = lammps.lammps(cmdargs='-screen none'.split())
+    lmp = lammps.lammps(cmdargs='-log none -screen none'.split())
     print(lmp.lib._name, end='')
 except:
     print('', end='')"
@@ -207,12 +254,13 @@ endfunction()
 # Setup LAMMPS
 # ------------
 
-find_package(LAMMPS REQUIRED)
+# We use find_lammps() first instead of find_package(LAMMPS) to avoid finding
+# MPI which requires CXX enabled, but we want to enable CXX after looking for
+# the NVCC compiler wrapper that comes with LAMMPS.
+find_lammps()
+
 message(STATUS "Found LAMMPS at ${LAMMPS_ROOT} (version ${LAMMPS_VERSION})")
 
-find_executable(LAMMPS::lmp "LAMMPS_EXECUTABLE")
-find_lammps_cxx_compiler("${LAMMPS_EXECUTABLE}/..")
-get_lammps_tag(${LAMMPS_VERSION})
 fetch_lammps(${LAMMPS_tag})
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -229,6 +277,8 @@ if(LAMMPS_CXX_COMPILER)
 endif()
 
 enable_language(CXX)
+
+find_package(LAMMPS REQUIRED)
 
 if(TARGET LAMMPS::mpi_stubs)  # LAMMPS was built without MPI support
     target_include_directories(LAMMPS::mpi_stubs SYSTEM INTERFACE
