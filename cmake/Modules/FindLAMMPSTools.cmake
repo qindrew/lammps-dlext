@@ -242,12 +242,25 @@ except:
         COMMAND ${Python_EXECUTABLE} -c "${find_lammps_script}"
         OUTPUT_VARIABLE PYLAMMPS_PATH
     )
-    set(PYLAMMPS_PATH "${PYLAMMPS_PATH}" PARENT_SCOPE)
     execute_process(
         COMMAND ${Python_EXECUTABLE} -c "${find_liblammps_script}"
-        OUTPUT_VARIABLE PYLAMMPS_LIBRARY_PATH
+        OUTPUT_VARIABLE PYLAMMPS_LIBRARY
     )
-    set(PYLAMMPS_LIBRARY_PATH "${PYLAMMPS_LIBRARY_PATH}" PARENT_SCOPE)
+    if(NOT ${PYLAMMPS_PATH} OR NOT ${PYLAMMPS_LIBRARY})
+        unset(PYLAMMPS_LIBRARY)
+        find_library(PYLAMMPS_LIBRARY
+            NAMES lammps
+            HINTS ${Python_SITELIB}
+            PATH_SUFFIXES lammps
+        )
+        if("${PYLAMMPS_LIBRARY}" STREQUAL "PYLAMMPS_LIBRARY-NOTFOUND")
+            message(FATAL_ERROR "Unable to locate LAMMPS python module")
+        else()
+            get_filename_component(PYLAMMPS_PATH "${PYLAMMPS_LIBRARY}" DIRECTORY)
+        endif()
+    endif()
+    set(PYLAMMPS_PATH "${PYLAMMPS_PATH}" PARENT_SCOPE)
+    set(PYLAMMPS_LIBRARY "${PYLAMMPS_LIBRARY}" PARENT_SCOPE)
 endfunction()
 
 
@@ -291,6 +304,7 @@ if(NOT LAMMPS_INSTALL_PREFIX)
 endif()
 
 add_library(LAMMPS_src INTERFACE)
+add_library(LAMMPS::src ALIAS LAMMPS_src)
 
 target_include_directories(LAMMPS_src INTERFACE "${lammps_SOURCE_DIR}/src")
 
