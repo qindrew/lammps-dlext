@@ -46,6 +46,7 @@ void export_FixDLExt(py::module& m)
             return cxx11::make_unique<FixDLExt>(lmp_ptr, narg, cargs.data());
         }))
         .def("set_callback", &FixDLExt::set_callback)
+        .def_property_readonly("view", &FixDLExt::get_view)
         ;
 }
 
