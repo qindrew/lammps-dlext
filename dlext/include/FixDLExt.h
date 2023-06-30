@@ -39,9 +39,10 @@ public:
     int setmask() override;
     void post_force(int) override;
     void set_callback(DLExtCallback& cb);
+    SPtr<LAMMPSView> get_view() const;
 
 private:
-    std::unique_ptr<LAMMPSView> view;
+    SPtr<LAMMPSView> view;
     DLExtCallback callback = [](TimeStep) { };
 };
 

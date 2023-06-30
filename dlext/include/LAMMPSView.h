@@ -14,6 +14,8 @@ namespace LAMMPS_NS
 namespace dlext
 {
 
+using namespace cxx11;
+
 // { // Aliases
 
 const auto kOnHost = ExecutionSpace::Host;

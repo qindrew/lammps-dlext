@@ -26,7 +26,7 @@ FixDLExt::FixDLExt(LAMMPS* lmp, int narg, char** arg)
     if (bad_args)
         error->all(FLERR, "Illegal fix dlext command");
 
-    view = cxx11::make_unique<LAMMPSView>(lmp);
+    view = std::make_shared<LAMMPSView>(lmp);
     kokkosable = view->has_kokkos_cuda_enabled();
     atomKK = dynamic_cast<AtomKokkos*>(atom);
     execution_space = (on_host || !kokkosable) ? kOnHost : kOnDevice;
@@ -37,6 +37,7 @@ FixDLExt::FixDLExt(LAMMPS* lmp, int narg, char** arg)
 int FixDLExt::setmask() { return FixConst::POST_FORCE; }
 void FixDLExt::post_force(int) { callback(update->ntimestep); }
 void FixDLExt::set_callback(DLExtCallback& cb) { callback = cb; }
+SPtr<LAMMPSView> FixDLExt::get_view() const { return view; }
 
 } // dlext
 } // LAMMPS_NS

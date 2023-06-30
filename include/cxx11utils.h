@@ -23,14 +23,17 @@ template <typename T>
 using SPtr = std::shared_ptr<T>;
 
 template <typename T>
+using UPtr = std::unique_ptr<T>;
+
+template <typename T>
 inline void maybe_unused(T&&)
 { }
 
 // `make_unique` for C++11
 template <typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args&&... args)
+UPtr<T> make_unique(Args&&... args)
 {
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+    return UPtr<T>(new T(std::forward<Args>(args)...));
 }
 
 }  // namespace cxx11
