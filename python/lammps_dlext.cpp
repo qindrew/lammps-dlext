@@ -22,9 +22,9 @@ LAMMPS_NS::LAMMPS* to_lammps_ptr(py::object lmp)
 
 void export_LAMMPSView(py::module& m)
 {
-    py::class_<LAMMPSView>(m, "LAMMPSView")
+    py::class_<LAMMPSView, SPtr<LAMMPSView>>(m, "LAMMPSView")
         .def(py::init([](py::object lmp) {
-            return cxx11::make_unique<LAMMPSView>(to_lammps_ptr(lmp));
+            return std::make_shared<LAMMPSView>(to_lammps_ptr(lmp));
         }))
         .def("has_kokkos_cuda_enabled", &LAMMPSView::has_kokkos_cuda_enabled)
         .def("local_particle_number", &LAMMPSView::local_particle_number)
