@@ -1,13 +1,15 @@
 # SPDX-License-Identifier: MIT
 # This file is part of `lammps-dlext`, see LICENSE.md
 
-# flake8:noqa:F401
-
-# API exposed to Python
-from .dlpack_extension import (
+from ._api import (  # noqa: F401 # pylint: disable=E0401
+    # Enums
     ExecutionSpace,
+    kOnDevice,
+    kOnHost,
+    # Classes
     FixDLExt,
     LAMMPSView,
+    # Methods
     forces,
     images,
     masses,
@@ -15,9 +17,9 @@ from .dlpack_extension import (
     tags,
     types,
     velocities,
+    # Other attributes
+    kImgMask,
+    kImgMax,
+    kImgBits,
+    kImg2Bits,
 )
-
-kOnDevice = ExecutionSpace.OnDevice
-kOnHost = ExecutionSpace.OnHost
-
-del dlpack_extension

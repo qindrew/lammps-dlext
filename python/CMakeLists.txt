@@ -2,7 +2,7 @@ include("${PROJECT_MODULE_PATH}/Fetchpybind11.cmake")
 
 set_python_module_path()  # sets variable PYLAMMPS_PATH
 
-set(pybind11_MODULE_NAME "dlpack_extension")
+set(pybind11_MODULE_NAME "_api")
 
 pybind11_add_module(${pybind11_MODULE_NAME} MODULE "")
 

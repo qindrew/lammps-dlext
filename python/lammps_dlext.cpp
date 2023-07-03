@@ -50,12 +50,17 @@ void export_FixDLExt(py::module& m)
         ;
 }
 
-PYBIND11_MODULE(dlpack_extension, m)
+PYBIND11_MODULE(_api, m)
 {
+    // We want to display the members of the module as `lammps.dlext.x`
+    // instead of `lammps.dlext._api.x`.
+    auto module_name = m.attr("__name__");
+    m.attr("__name__") = "lammps.dlext";
+
     // Enums
     py::enum_<ExecutionSpace>(m, "ExecutionSpace")
-        .value("OnDevice", kOnDevice)
-        .value("OnHost", kOnHost)
+        .value("kOnDevice", kOnDevice)
+        .value("kOnHost", kOnHost)
         .export_values();
 
     // Classes
@@ -70,4 +75,13 @@ PYBIND11_MODULE(dlpack_extension, m)
     m.def("images", enpycapsulate<&images>);
     m.def("tags", enpycapsulate<&tags>);
     m.def("types", enpycapsulate<&types>);
+
+    // Other attributes
+    m.attr("kImgMask") = IMGMASK;
+    m.attr("kImgMax") = IMGMAX;
+    m.attr("kImgBits") = IMGBITS;
+    m.attr("kImg2Bits") = IMG2BITS;
+
+    // Set back the module_name to its original value
+    m.attr("__name__") = module_name;
 }
