@@ -26,6 +26,12 @@ FixDLExt::FixDLExt(LAMMPS* lmp, int narg, char** arg)
     if (bad_args)
         error->all(FLERR, "Illegal fix dlext command");
 
+    if (!atom->tag_enable)
+        error->all(FLERR, "Fix dlext requires atoms to have IDs");
+
+    if (atom->map_style != Atom::MAP_ARRAY)
+        error->all(FLERR, "Fix dlext requires to map atoms as arrays");
+
     view = std::make_shared<LAMMPSView>(lmp);
     kokkosable = view->has_kokkos_cuda_enabled();
     atomKK = dynamic_cast<AtomKokkos*>(atom);

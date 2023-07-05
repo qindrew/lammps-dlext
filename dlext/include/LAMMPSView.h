@@ -24,7 +24,7 @@ const auto kOnDevice = ExecutionSpace::Device;
 // } // Aliases
 
 constexpr unsigned int DLEXT_MASK = (
-    X_MASK | V_MASK | F_MASK | TAG_MASK | TYPE_MASK | MASK_MASK | IMAGE_MASK
+    X_MASK | V_MASK | F_MASK | TAG_MASK | TYPE_MASK | MASK_MASK | MAP_MASK | IMAGE_MASK
 );
 
 //! LAMMPSView is a wrapper around a LAMMPS* instance which provides convenience methods

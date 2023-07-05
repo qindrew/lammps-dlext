@@ -32,6 +32,7 @@ static struct Masses { } kMasses;
 static struct Forces { } kForces;
 static struct Images { } kImages;
 static struct Tags { } kTags;
+static struct TagsMap { } kTagsMap;
 static struct Types { } kTypes;
 
 static struct SecondDim { } kSecondDim;
@@ -73,6 +74,7 @@ DLEXT_OPAQUE_ATOM_KOKKOS(Masses, k_mass)
 DLEXT_OPAQUE_ATOM_KOKKOS(Forces, k_f)
 DLEXT_OPAQUE_ATOM_KOKKOS(Images, k_image)
 DLEXT_OPAQUE_ATOM_KOKKOS(Tags, k_tag)
+DLEXT_OPAQUE_ATOM_KOKKOS(TagsMap, k_map_array)
 DLEXT_OPAQUE_ATOM_KOKKOS(Types, k_type)
 
 #undef DLEXT_OPAQUE_ATOM_KOKKOS
@@ -85,6 +87,10 @@ inline void* opaque(const Atom* atom, Forces) { return opaque(atom->f[0]); }
 inline void* opaque(const Atom* atom, Images) { return opaque(atom->mass); }
 inline void* opaque(const Atom* atom, Tags) { return opaque(atom->tag); }
 inline void* opaque(const Atom* atom, Types) { return opaque(atom->type); }
+inline void* opaque(const Atom* atom, TagsMap)
+{
+    return opaque(const_cast<Atom*>(atom)->get_map_array());
+}
 
 template <typename Property>
 inline void* opaque(const LAMMPSView& view, DLDeviceType device_type, Property p)
@@ -107,6 +113,7 @@ constexpr DLDataTypeCode dtype_code(Masses) { return kDLFloat; }
 constexpr DLDataTypeCode dtype_code(Forces) { return kDLFloat; }
 constexpr DLDataTypeCode dtype_code(Images) { return kDLInt; }
 constexpr DLDataTypeCode dtype_code(Tags) { return kDLInt; }
+constexpr DLDataTypeCode dtype_code(TagsMap) { return kDLInt; }
 constexpr DLDataTypeCode dtype_code(Types) { return kDLInt; }
 
 #define DLEXT_BITS_FLOAT_ARRAY(PROPERTY, TYPE)                                          \
@@ -134,13 +141,8 @@ DLEXT_BITS_INT_ARRAY(Tags, tagint)
 
 #undef DLEXT_BITS_INT_ARRAY
 
+inline uint8_t bits(DLDeviceType device_type, TagsMap) { return 32; }
 inline uint8_t bits(DLDeviceType device_type, Types) { return 32; }
-
-template <typename Property>
-inline uint8_t bits(DLDeviceType device_type, Property p)
-{
-    return device_type == kDLCPU ? 64 : bits(p);
-}
 
 template <typename Property>
 inline DLDataType dtype(DLDeviceType device_type, Property p)
@@ -154,6 +156,7 @@ inline int64_t size(const LAMMPSView& view, Property)
     return view.local_particle_number();
 }
 inline int64_t size(const LAMMPSView& view, Masses) { return view.atom_ptr()->ntypes + 1; }
+inline int64_t size(const LAMMPSView& view, TagsMap) { return view.atom_ptr()->get_map_size(); }
 
 template <typename Property>
 inline int64_t size(const LAMMPSView& view, Property, SecondDim)
@@ -214,6 +217,7 @@ DLEXT_PROPERTY_FROM_VIEW(masses, kMasses)
 DLEXT_PROPERTY_FROM_VIEW(forces, kForces)
 DLEXT_PROPERTY_FROM_VIEW(images, kImages)
 DLEXT_PROPERTY_FROM_VIEW(tags, kTags)
+DLEXT_PROPERTY_FROM_VIEW(tags_map, kTagsMap)
 DLEXT_PROPERTY_FROM_VIEW(types, kTypes)
 
 #undef DLEXT_PROPERTY
