@@ -54,7 +54,7 @@ PYBIND11_MODULE(_api, m)
 {
     // We want to display the members of the module as `lammps.dlext.x`
     // instead of `lammps.dlext._api.x`.
-    auto module_name = py::str(m.attr("__name__"));
+    py::str module_name = m.attr("__name__");
     m.attr("__name__") = "lammps.dlext";
 
     // Enums
