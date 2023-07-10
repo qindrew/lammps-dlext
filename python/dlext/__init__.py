@@ -15,6 +15,7 @@ from ._api import (  # noqa: F401 # pylint: disable=E0401
     masses,
     positions,
     tags,
+    tags_map,
     types,
     velocities,
     # Other attributes

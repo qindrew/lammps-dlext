@@ -18,6 +18,9 @@ LAMMPSView::LAMMPSView(LAMMPS_NS::LAMMPS* lmp)
         // Since there's is no MASS_MASK, we need to make sure
         // masses are available on the device.
         atom_kokkos_ptr()->k_mass.sync_device();
+        // On the other hand, MAP_MASK exists, but it's never used
+        // within any of the synchronizations methods.
+        atom_kokkos_ptr()->k_map_array.sync_device();
     }
 #endif
 }
@@ -45,6 +48,7 @@ void LAMMPSView::synchronize(ExecutionSpace requested_space)
 {
     if (lmp->kokkos) {
         atom_kokkos_ptr()->sync(try_pick(requested_space), DLEXT_MASK);
+        atom_kokkos_ptr()->k_map_array.sync_device();
     }
 }
 
