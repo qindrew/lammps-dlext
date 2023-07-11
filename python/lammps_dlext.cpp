@@ -7,6 +7,8 @@
 #include "pybind11/functional.h"
 #include "pybind11/stl.h"
 
+#include <limits>
+
 using namespace LAMMPS_NS;
 using namespace LAMMPS_NS::dlext;
 
@@ -82,6 +84,7 @@ PYBIND11_MODULE(_api, m)
     m.attr("kImgMax") = IMGMAX;
     m.attr("kImgBits") = IMGBITS;
     m.attr("kImg2Bits") = IMG2BITS;
+    m.attr("kImgBitSize") = sizeof(imageint) * CHAR_BIT;
 
     // Set back the module_name to its original value
     m.attr("__name__") = module_name;
