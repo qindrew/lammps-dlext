@@ -246,7 +246,7 @@ except:
         COMMAND ${Python_EXECUTABLE} -c "${find_liblammps_script}"
         OUTPUT_VARIABLE PYLAMMPS_LIBRARY
     )
-    if(NOT ${PYLAMMPS_PATH} OR NOT ${PYLAMMPS_LIBRARY})
+    if("${PYLAMMPS_PATH}" STREQUAL "" OR "${PYLAMMPS_LIBRARY}" STREQUAL "")
         unset(PYLAMMPS_LIBRARY)
         find_library(PYLAMMPS_LIBRARY
             NAMES lammps
