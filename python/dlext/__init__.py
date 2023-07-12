@@ -23,4 +23,5 @@ from ._api import (  # noqa: F401 # pylint: disable=E0401
     kImgMax,
     kImgBits,
     kImg2Bits,
+    kImgBitSize,
 )
