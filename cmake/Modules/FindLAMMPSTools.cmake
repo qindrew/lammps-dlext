@@ -278,9 +278,9 @@ fetch_lammps(${LAMMPS_tag})
 
 if(NOT CMAKE_BUILD_TYPE)
     if(${LAMMPS_VERSION} GREATER 20190618)
-        set(CMAKE_BUILD_TYPE Release CACHE STRING "Type of build" FORCE)
-    else()
         set(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING "Type of build" FORCE)
+    else()
+        set(CMAKE_BUILD_TYPE Release CACHE STRING "Type of build" FORCE)
     endif()
 endif()
 
