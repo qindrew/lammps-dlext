@@ -14,7 +14,7 @@ LAMMPSView::LAMMPSView(LAMMPS_NS::LAMMPS* lmp)
     : Pointers(lmp)
 {
 #ifdef LMP_KOKKOS
-    if (has_kokkos_cuda_enabled()) {
+    if (has_kokkos_cuda_enabled(lmp)) {
         // Since there's is no MASS_MASK, we need to make sure
         // masses are available on the device.
         atom_kokkos_ptr()->k_mass.sync_device();
@@ -35,12 +35,6 @@ DLDeviceType LAMMPSView::device_type(ExecutionSpace requested_space) const
 
 int LAMMPSView::device_id() const { return 0; }  // TODO: infer this from the LAMMPS instance
 
-bool LAMMPSView::has_kokkos_cuda_enabled() const
-{
-    bool has_cuda = strcmp(LMPDeviceType::name(), "Cuda") == 0;
-    return has_cuda & (lmp->kokkos != nullptr);
-}
-
 int LAMMPSView::local_particle_number() const { return atom_ptr()->nlocal; }
 bigint LAMMPSView::global_particle_number() const { return atom_ptr()->natoms; }
 
@@ -54,7 +48,7 @@ void LAMMPSView::synchronize(ExecutionSpace requested_space)
 
 ExecutionSpace LAMMPSView::try_pick(ExecutionSpace requested_space) const
 {
-    return has_kokkos_cuda_enabled() ? requested_space : kOnHost;
+    return has_kokkos_cuda_enabled(lmp) ? requested_space : kOnHost;
 }
 
 }  // dlext

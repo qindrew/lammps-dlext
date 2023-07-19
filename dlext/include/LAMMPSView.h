@@ -4,6 +4,7 @@
 #ifndef LAMMPSVIEW_H_
 #define LAMMPSVIEW_H_
 
+#include "accelerator_kokkos.h"
 #include "atom_masks.h"
 #include "cxx11utils.h"
 #include "dlpack/dlpack.h"
@@ -44,8 +45,6 @@ public:
     //! The device id where this class instances are being executed
     int device_id() const;
 
-    bool has_kokkos_cuda_enabled() const;
-
     // Convenience methods for retriving the number of particles
     int local_particle_number() const;
     bigint global_particle_number() const;
@@ -56,6 +55,12 @@ public:
 private:
     ExecutionSpace try_pick(ExecutionSpace requested_space) const;
 };
+
+inline bool has_kokkos_cuda_enabled(LAMMPS* lmp)
+{
+    bool has_cuda = strcmp(LMPDeviceType::name(), "Cuda") == 0;
+    return has_cuda & (lmp->kokkos != nullptr);
+}
 
 }  // namespace dlext
 }  // namespace LAMMPS_NS
