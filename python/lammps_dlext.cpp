@@ -4,6 +4,7 @@
 #include "FixDLExt.h"
 #include "PyDLExt.h"
 
+#include "modify.h"
 #include "pybind11/functional.h"
 #include "pybind11/stl.h"
 
@@ -24,11 +25,10 @@ LAMMPS_NS::LAMMPS* to_lammps_ptr(py::object lmp)
 
 void export_LAMMPSView(py::module& m)
 {
-    py::class_<LAMMPSView, SPtr<LAMMPSView>>(m, "LAMMPSView")
+    py::class_<LAMMPSView>(m, "LAMMPSView")
         .def(py::init([](py::object lmp) {
-            return std::make_shared<LAMMPSView>(to_lammps_ptr(lmp));
+            return cxx11::make_unique<LAMMPSView>(to_lammps_ptr(lmp));
         }))
-        .def("has_kokkos_cuda_enabled", &LAMMPSView::has_kokkos_cuda_enabled)
         .def("local_particle_number", &LAMMPSView::local_particle_number)
         .def("global_particle_number", &LAMMPSView::global_particle_number)
         .def("synchronize", &LAMMPSView::synchronize, py::arg("space") = kOnDevice)
@@ -37,18 +37,18 @@ void export_LAMMPSView(py::module& m)
 
 void export_FixDLExt(py::module& m)
 {
-    py::class_<FixDLExt>(m, "FixDLExt")
-        .def(py::init([](py::object lmp, std::vector<std::string> args) {
+    // Fixes are managed by each lammps' instance `modify` member,
+    // so we should prevent python from trying to delete them.
+    using FixDLExtHolder = std::unique_ptr<FixDLExt, py::nodelete>;
+
+    py::class_<FixDLExt, FixDLExtHolder>(m, "FixDLExt")
+        .def(py::init([](py::object lmp, std::string& args) {
             auto lmp_ptr = to_lammps_ptr(lmp);
-            std::vector<char*> cargs;
-            cargs.reserve(args.size());
-            for (auto& arg : args)
-                cargs.push_back(const_cast<char*>(arg.c_str()));
-            int narg = cargs.size();
-            return cxx11::make_unique<FixDLExt>(lmp_ptr, narg, cargs.data());
+            register_FixDLExt(lmp_ptr);
+            auto fix = lmp_ptr->modify->add_fix(args);
+            return static_cast<FixDLExt*>(fix);
         }))
         .def("set_callback", &FixDLExt::set_callback)
-        .def_property_readonly("view", &FixDLExt::get_view)
         ;
 }
 
@@ -70,6 +70,9 @@ PYBIND11_MODULE(_api, m)
     export_FixDLExt(m);
 
     // Methods
+    m.def("has_kokkos_cuda_enabled", [](py::object lmp) {
+        return has_kokkos_cuda_enabled(to_lammps_ptr(lmp));
+    });
     m.def("positions", enpycapsulate<&positions>);
     m.def("velocities", enpycapsulate<&velocities>);
     m.def("masses", enpycapsulate<&masses>);

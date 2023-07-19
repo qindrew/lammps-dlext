@@ -32,8 +32,7 @@ FixDLExt::FixDLExt(LAMMPS* lmp, int narg, char** arg)
     if (atom->map_style != Atom::MAP_ARRAY)
         error->all(FLERR, "Fix dlext requires to map atoms as arrays");
 
-    view = std::make_shared<LAMMPSView>(lmp);
-    kokkosable = view->has_kokkos_cuda_enabled();
+    kokkosable = has_kokkos_cuda_enabled(lmp);
     atomKK = dynamic_cast<AtomKokkos*>(atom);
     execution_space = (on_host || !kokkosable) ? kOnHost : kOnDevice;
     datamask_read = EMPTY_MASK;
@@ -43,7 +42,14 @@ FixDLExt::FixDLExt(LAMMPS* lmp, int narg, char** arg)
 int FixDLExt::setmask() { return FixConst::POST_FORCE; }
 void FixDLExt::post_force(int) { callback(update->ntimestep); }
 void FixDLExt::set_callback(DLExtCallback& cb) { callback = cb; }
-SPtr<LAMMPSView> FixDLExt::get_view() const { return view; }
+
+void register_FixDLExt(LAMMPS* lmp)
+{
+    auto fix_map = lmp->modify->fix_map;
+    (*fix_map)[std::string("dlext")] = [](LAMMPS* lmp, int narg, char** arg) -> Fix* {
+        return new FixDLExt(lmp, narg, arg);
+    };
+}
 
 } // dlext
 } // LAMMPS_NS

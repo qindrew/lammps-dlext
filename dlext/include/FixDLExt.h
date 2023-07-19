@@ -39,12 +39,12 @@ public:
     int setmask() override;
     void post_force(int) override;
     void set_callback(DLExtCallback& cb);
-    SPtr<LAMMPSView> get_view() const;
 
 private:
-    SPtr<LAMMPSView> view;
     DLExtCallback callback = [](TimeStep) { };
 };
+
+void register_FixDLExt(LAMMPS* lmp);
 
 }  // namespace dlext
 }  // namespace LAMMPS_NS
