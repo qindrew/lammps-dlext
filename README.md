@@ -5,7 +5,7 @@ Provides access to [LAMMPS](https://www.lammps.org) simulation data on CPU or GP
 
 ## Installation
 
-Make sure that you have LAMMPS installed and it was built as a shared library, and that
+Make sure that you have LAMMPS installed and it was built as a *shared library*, and that
 the LAMMPS Python module is also installed. If appropriate, activate the python
 environment where the LAMMPS Python module can be found.
 
