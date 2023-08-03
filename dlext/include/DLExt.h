@@ -84,7 +84,7 @@ inline void* opaque(const Atom* atom, Positions) { return opaque(atom->x[0]); }
 inline void* opaque(const Atom* atom, Velocities) { return opaque(atom->v[0]); }
 inline void* opaque(const Atom* atom, Masses) { return opaque(atom->mass); }
 inline void* opaque(const Atom* atom, Forces) { return opaque(atom->f[0]); }
-inline void* opaque(const Atom* atom, Images) { return opaque(atom->mass); }
+inline void* opaque(const Atom* atom, Images) { return opaque(atom->image); }
 inline void* opaque(const Atom* atom, Tags) { return opaque(atom->tag); }
 inline void* opaque(const Atom* atom, Types) { return opaque(atom->type); }
 inline void* opaque(const Atom* atom, TagsMap)
