@@ -15,7 +15,7 @@ copy_target_property(LAMMPS::lammps ${pybind11_MODULE_NAME}::lammps INTERFACE_CO
 copy_target_property(LAMMPS::lammps ${pybind11_MODULE_NAME}::lammps INTERFACE_LINK_LIBRARIES)
 
 if(Kokkos_FOUND AND (${Kokkos_VERSION} VERSION_GREATER_EQUAL "3.3.0"))
-    target_compile_features(${pybind11_MODULE_NAME} PRIVATE cxx_std_14)
+    target_compile_features(${pybind11_MODULE_NAME} PRIVATE cxx_std_17)
 else()
     target_compile_features(${pybind11_MODULE_NAME} PRIVATE cxx_std_11)
 endif()
