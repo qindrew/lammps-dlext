@@ -308,13 +308,13 @@ add_library(LAMMPS::src ALIAS LAMMPS_src)
 
 target_include_directories(LAMMPS_src INTERFACE "${lammps_SOURCE_DIR}/src")
 
-find_package(Kokkos QUIET)
-if(Kokkos_FOUND)
-    message(STATUS "Kokkos support has been enabled (version ${Kokkos_VERSION})")
-    target_include_directories(LAMMPS_src INTERFACE "${lammps_SOURCE_DIR}/src/KOKKOS")
-else()
-    message(STATUS
-        "Kokkos support is not enabled. If you built LAMMPS with Kokkos,"
-        "make sure that CMake if able to find it by providing the Kokkos_ROOT."
-    )
-endif()
+#find_package(Kokkos QUIET)
+#if(Kokkos_FOUND)
+#    message(STATUS "Kokkos support has been enabled (version ${Kokkos_VERSION})")
+target_include_directories(LAMMPS_src INTERFACE "${lammps_SOURCE_DIR}/src/KOKKOS")
+#else()
+#    message(STATUS
+#        "Kokkos support is not enabled. If you built LAMMPS with Kokkos,"
+#        "make sure that CMake if able to find it by providing the Kokkos_ROOT."
+#    )
+#endif()
