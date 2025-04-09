@@ -38,7 +38,7 @@ if(BUILD_CXX_PLUGIN)
     add_library(${PROJECT_NAME} SHARED "")
 
     if(Kokkos_FOUND AND (${Kokkos_VERSION} VERSION_GREATER_EQUAL "3.3.0"))
-        target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_14)
+        target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
     else()
         target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_11)
     endif()
