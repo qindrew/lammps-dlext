@@ -46,7 +46,7 @@ if(BUILD_CXX_PLUGIN)
         PUBLIC ${PROJECT_NAME}::headers LAMMPS::src LAMMPS::lammps dlpack::dlpack
     )
     #if(Kokkos_FOUND)
-    #    target_link_libraries(${PROJECT_NAME} PUBLIC Kokkos::kokkos)
+    target_link_libraries(${PROJECT_NAME} PUBLIC Kokkos::kokkos)
     target_compile_definitions(${PROJECT_NAME} PUBLIC LMP_KOKKOS)
     #endif()
 
