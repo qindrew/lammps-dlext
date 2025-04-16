@@ -27,7 +27,7 @@ target_sources(${pybind11_MODULE_NAME}
     PRIVATE ${${PROJECT_NAME}_SOURCE_FILES} lammps_dlext.cpp
 )
 #if(Kokkos_FOUND)
-target_link_libraries(${pybind11_MODULE_NAME} PRIVATE Kokkos::kokkos)
+#target_link_libraries(${pybind11_MODULE_NAME} PRIVATE Kokkos::kokkos)
 target_compile_definitions(${pybind11_MODULE_NAME} PRIVATE LMP_KOKKOS)
 #endif()
 
