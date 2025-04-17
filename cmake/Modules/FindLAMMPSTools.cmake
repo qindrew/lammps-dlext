@@ -313,6 +313,7 @@ target_include_directories(LAMMPS_src INTERFACE "${lammps_SOURCE_DIR}/src")
 #    message(STATUS "Kokkos support has been enabled (version ${Kokkos_VERSION})")
 target_include_directories(LAMMPS_src INTERFACE "${lammps_SOURCE_DIR}/src/KOKKOS")
 target_include_directories(LAMMPS_src INTERFACE "${lammps_SOURCE_DIR}/lib/kokkos/core/src")
+target_include_directories(LAMMPS_src INTERFACE "${lammps_SOURCE_DIR}/lib/kokkos/tpls/desul/include/")
 #else()
 #    message(STATUS
 #        "Kokkos support is not enabled. If you built LAMMPS with Kokkos,"
