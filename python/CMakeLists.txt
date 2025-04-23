@@ -19,6 +19,10 @@ if(Kokkos_FOUND AND (${Kokkos_VERSION} VERSION_GREATER_EQUAL "3.3.0"))
 else()
     target_compile_features(${pybind11_MODULE_NAME} PRIVATE cxx_std_11)
 endif()
+
+find_package(Torch REQUIRED HINTS /home/ac.acqin2/softwares/libtorch-gpu)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
+
 target_link_libraries(${pybind11_MODULE_NAME}
     PRIVATE ${pybind11_MODULE_NAME}::lammps dlpack::dlpack
     PRIVATE ${PROJECT_NAME}::headers LAMMPS::src
