@@ -19,12 +19,10 @@ namespace LAMMPS_NS
 namespace dlext
 {
 
-#ifndef LMP_KOKKOS
 using LMP_FLOAT = double;
 using X_FLOAT = double;
 using V_FLOAT = double;
 using F_FLOAT = double;
-#endif
 
 static struct Positions { } kPositions;
 static struct Velocities { } kVelocities;
