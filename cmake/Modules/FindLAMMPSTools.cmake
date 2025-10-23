@@ -79,47 +79,89 @@ endfunction()
 # Given a LAMMPS `version` as reported to CMake or Python, sets `LAMMPS_tag` in the
 # parent scope to the latest git tag matching this version within the LAMMPS repo.
 function(get_lammps_tag version)
-    # Try to get the git tag or commit directly from LAMMPS' help
-    execute_process(
-        COMMAND ${LAMMPS_EXECUTABLE} -h
-        RESULT_VARIABLE exit_code
-        OUTPUT_VARIABLE LAMMPS_help
-        ERROR_QUIET
-    )
+  message(STATUS "=== get_lammps_tag() called ===")
+  message(STATUS "Input version string: '${version}'")
+  message(STATUS "Initial LAMMPS_tag: '${LAMMPS_tag}' (if already defined)")
 
-    if(exit_code EQUAL 0)
-        string(REGEX MATCH "Git info [^ ]+ / ([^)]+)" _ "${LAMMPS_help}")
+  # Honor user-provided tag
+  if(DEFINED LAMMPS_tag AND NOT "${LAMMPS_tag}" STREQUAL "")
+    message(STATUS "User provided LAMMPS_tag='${LAMMPS_tag}', skipping detection.")
+    set(LAMMPS_tag "${LAMMPS_tag}" PARENT_SCOPE)
+    return()
+  endif()
 
-        if(
-            (NOT ("${CMAKE_MATCH_1}" STREQUAL "")) AND
-            (NOT ("${CMAKE_MATCH_1}" STREQUAL "(unknown)"))
-        )
-            set(LAMMPS_tag "${CMAKE_MATCH_1}" PARENT_SCOPE)
-            return()
-        endif()
+  # Try to read tag from the binary
+  execute_process(
+    COMMAND ${LAMMPS_EXECUTABLE} -h
+    RESULT_VARIABLE _ec
+    OUTPUT_VARIABLE _help
+    ERROR_QUIET
+  )
+  message(STATUS "LAMMPS_EXECUTABLE='${LAMMPS_EXECUTABLE}' returned code ${_ec}")
+  if(_ec EQUAL 0)
+    string(REGEX MATCH "Git info [^ ]+ / ([^)]+)" _ "${_help}")
+    message(STATUS "LAMMPS -h output match: '${CMAKE_MATCH_1}'")
+    if(NOT "${CMAKE_MATCH_1}" STREQUAL "" AND NOT "${CMAKE_MATCH_1}" STREQUAL "(unknown)")
+      message(STATUS "Detected tag directly from LAMMPS binary: '${CMAKE_MATCH_1}'")
+      set(LAMMPS_tag "${CMAKE_MATCH_1}" PARENT_SCOPE)
+      return()
     endif()
+  endif()
 
-    # If we're unable to find it we search for the last tag that matches
-    # the provided `version`.
-    set(MONTHS _ Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)
+  # --- Robust version parsing: pull the first three integers we see ---
+  message(STATUS "Attempting to parse version string for YYYY/MM/DD parts...")
+  string(REGEX MATCHALL "[0-9]+" _nums "${version}")
+  list(LENGTH _nums _nlen)
+  message(STATUS "Extracted numbers (${_nlen}): '${_nums}'")
 
-    string(REGEX MATCH "([0-9][0-9][0-9][0-9])([0-9][0-9])([0-9][0-9]).*" _ "${version}")
-    set(year ${CMAKE_MATCH_1})
-    list(GET MONTHS ${CMAKE_MATCH_2} month)
-    math(EXPR day ${CMAKE_MATCH_3})
-    set(pattern "*${day}${month}${year}*")
+  if(_nlen LESS 3)
+    message(WARNING "FindLAMMPSTools: cannot parse version '${version}'. Pass -DLAMMPS_tag=<tag>.")
+    return()
+  endif()
 
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} ls-remote --tags --refs ${LAMMPS_URL} ${pattern}
-        RESULT_VARIABLE exit_code  # TODO: use this to check if it fails and inform the user
-        OUTPUT_VARIABLE git_tags
-        ERROR_QUIET
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+  list(GET _nums 0 _year)
+  list(GET _nums 1 _mm)
+  list(GET _nums 2 _dd)
+  message(STATUS "Parsed year='${_year}', month='${_mm}', day='${_dd}'")
 
-    string(REGEX MATCH ".*/(.+)$" _ "${git_tags}")
+  # Normalize month/day to integers
+  math(EXPR _mm_int "${_mm}")
+  math(EXPR _dd_int "${_dd}")
+  message(STATUS "Normalized to integers: month=${_mm_int}, day=${_dd_int}")
 
+  # Compose pattern like *10Sep2025* expected by LAMMPS tags
+  set(_MONTHS _ Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec)
+  if(_mm_int LESS 1 OR _mm_int GREATER 12)
+    message(WARNING "FindLAMMPSTools: month '${_mm}' out of range from version '${version}'.")
+    return()
+  endif()
+  list(GET _MONTHS ${_mm_int} _mon)
+  set(_pattern "*${_dd_int}${_mon}${_year}*")
+  message(STATUS "Composed tag search pattern: '${_pattern}'")
+
+  # Query git for tags
+  message(STATUS "Running git ls-remote on '${LAMMPS_URL}' ...")
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} ls-remote --tags --refs ${LAMMPS_URL} ${_pattern}
+    RESULT_VARIABLE _gec
+    OUTPUT_VARIABLE _tags
+    ERROR_QUIET
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  message(STATUS "Git command exit code: ${_gec}")
+  message(STATUS "Git tags output: '${_tags}'")
+
+  string(REGEX MATCH ".*/(.+)$" _ "${_tags}")
+  message(STATUS "Extracted tag candidate: '${CMAKE_MATCH_1}'")
+
+  if(NOT "${CMAKE_MATCH_1}" STREQUAL "")
     set(LAMMPS_tag "${CMAKE_MATCH_1}" PARENT_SCOPE)
+    message(STATUS "Final LAMMPS_tag set to: '${CMAKE_MATCH_1}'")
+  else()
+    message(WARNING "FindLAMMPSTools: no matching git tag for pattern '${_pattern}'. Pass -DLAMMPS_tag=<tag>.")
+  endif()
+
+  message(STATUS "=== get_lammps_tag() complete ===")
 endfunction()
 
 #     get_lammps_version(path)
